@@ -1,6 +1,6 @@
 /**
  * ====================================================================
- * AVENTURA DO SABER COM O CALISTO 🦜 - VOZ MASCULINA, ENVELHECIDA & RACHADA
+ * AVENTURA DO SABER COM O CALISTO 🦜 - MOTOR PRINCIPAL & ERGONOMIA
  * ====================================================================
  */
 
@@ -18,12 +18,13 @@ const AppState = {
   quizAnswerLocked: false,
   currentSlideIdx: 0,
   isAutoPlaying: false,
-  autoPlayTimer: null
+  autoPlayTimer: null,
+  educatorAuthenticated: false
 };
 window.AppState = AppState;
 
 // ====================================================================
-// SINTETIZADOR E GERENCIADOR DE GRASNIDO CURTO REAL DE RINGNECK
+// SINTETIZADOR E GERENCIADOR DE ÁUDIO / GRASNIDO DO RINGNECK
 // ====================================================================
 class SoundFX {
   constructor() {
@@ -45,7 +46,6 @@ class SoundFX {
     }
   }
 
-  // GRASNIDO CURTO E RÁPIDO DO RINGNECK (0.42 segundos!)
   playRingneckRealChirp() {
     if (!AppState.soundEnabled) return;
     try {
@@ -173,7 +173,7 @@ const sounds = new SoundFX();
 window.sounds = sounds;
 
 // ====================================================================
-// VOZ MASCULINA, RACHADA & ENVELHECIDA DE BRUXO/SÁBIO DO CALISTO
+// VOZ MASCULINA, ENVELHECIDA & EXPRESSIVA DO CALISTO
 // ====================================================================
 function selecionarVozMasculina() {
   if (!('speechSynthesis' in window)) return { voice: null, isMale: false };
@@ -188,7 +188,6 @@ function selecionarVozMasculina() {
     'vitória', 'vitoria', 'female', 'mulher', 'zira', 'raquel', 'yasmin', 'camila'
   ];
 
-  // 1. Busca específica por vozes masculinas em pt-BR (Daniel, Antonio, Yago, etc.)
   const ptBrMale = voices.find(v => {
     const name = v.name.toLowerCase();
     const lang = v.lang.toLowerCase();
@@ -199,7 +198,6 @@ function selecionarVozMasculina() {
   });
   if (ptBrMale) return { voice: ptBrMale, isMale: true };
 
-  // 2. Qualquer voz masculina em português
   const ptMale = voices.find(v => {
     const name = v.name.toLowerCase();
     const lang = v.lang.toLowerCase();
@@ -210,7 +208,6 @@ function selecionarVozMasculina() {
   });
   if (ptMale) return { voice: ptMale, isMale: true };
 
-  // 3. Voz em pt-BR não explicitamente feminina
   const ptBrNeutral = voices.find(v => {
     const name = v.name.toLowerCase();
     const lang = v.lang.toLowerCase();
@@ -219,13 +216,6 @@ function selecionarVozMasculina() {
     return isPtBr && !isFemale;
   });
   if (ptBrNeutral) return { voice: ptBrNeutral, isMale: true };
-
-  // 4. Qualquer voz em português
-  const anyPt = voices.find(v => v.lang.toLowerCase().includes('pt'));
-  if (anyPt) {
-    const isFemale = femaleKeywords.some(k => anyPt.name.toLowerCase().includes(k));
-    return { voice: anyPt, isMale: !isFemale };
-  }
 
   return { voice: voices[0] || null, isMale: true };
 }
@@ -241,20 +231,26 @@ function limparTextoParaFala(texto) {
 
 window.activeUtterance = null;
 
-function falarTexto(textoOriginal) {
-  if (!AppState.soundEnabled) return;
-
-  const textoLimpo = limparTextoParaFala(textoOriginal);
-  if (!textoLimpo) return;
-
-  // Toca o grasnido real do ringneck
-  try {
-    sounds.playRingneckRealChirp();
-  } catch (e) {
-    console.warn('Audio play error:', e);
+function falarTexto(textoOriginal, callbackOnEnd = null) {
+  if (!AppState.soundEnabled) {
+    if (callbackOnEnd) callbackOnEnd();
+    return;
   }
 
-  if (!('speechSynthesis' in window)) return;
+  const textoLimpo = limparTextoParaFala(textoOriginal);
+  if (!textoLimpo) {
+    if (callbackOnEnd) callbackOnEnd();
+    return;
+  }
+
+  try {
+    sounds.playRingneckRealChirp();
+  } catch (e) {}
+
+  if (!('speechSynthesis' in window)) {
+    if (callbackOnEnd) callbackOnEnd();
+    return;
+  }
 
   try {
     window.speechSynthesis.cancel();
@@ -263,46 +259,42 @@ function falarTexto(textoOriginal) {
     }
 
     const utterance = new SpeechSynthesisUtterance(textoLimpo);
-    window.activeUtterance = utterance; // Evita que o garbage collector do navegador corte a fala
+    window.activeUtterance = utterance;
     utterance.lang = 'pt-BR';
 
-    // VOZ MASCULINA, ENVELHECIDA & RACHADA (Estilo Bruxo / Feiticeiro Sábio Ágil)
     const { voice, isMale } = selecionarVozMasculina();
-    if (voice) {
-      utterance.voice = voice;
-    }
+    if (voice) utterance.voice = voice;
 
     if (isMale) {
-      utterance.pitch = 1.48; // Timbre rachado e envelhecido
-      utterance.rate = 1.34;  // Ágil e expressivo
+      utterance.pitch = 1.46;
+      utterance.rate = 1.32;
     } else {
-      utterance.pitch = 0.70; // Fallback rouco
-      utterance.rate = 1.34;
+      utterance.pitch = 0.72;
+      utterance.rate = 1.32;
     }
 
     utterance.onstart = () => {
       if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(true);
     };
+
     utterance.onend = () => {
       if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(false);
       window.activeUtterance = null;
+      if (callbackOnEnd) callbackOnEnd();
     };
-    utterance.onerror = (err) => {
-      console.warn('SpeechSynthesis error:', err);
+
+    utterance.onerror = () => {
       if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(false);
       window.activeUtterance = null;
+      if (callbackOnEnd) callbackOnEnd();
     };
 
     window.speechSynthesis.speak(utterance);
   } catch (err) {
-    console.error('Erro na síntese de fala:', err);
-    if (window.setParrotSpeakingAll) {
-      window.setParrotSpeakingAll(true);
-      setTimeout(() => window.setParrotSpeakingAll(false), 2000);
-    }
+    console.error('Erro de síntese de voz:', err);
+    if (callbackOnEnd) callbackOnEnd();
   }
 }
-
 window.falarTexto = falarTexto;
 
 if ('speechSynthesis' in window) {
@@ -399,51 +391,60 @@ function verificarNomeCrianca() {
 
 function abrirModalNome() {
   const modal = document.getElementById('name-modal');
-  modal.classList.add('open');
+  if (modal) modal.classList.add('open');
   const input = document.getElementById('input-child-name');
-  input.value = AppState.childName || '';
-  setTimeout(() => {
-    input.focus();
-    falarTexto('Hehehe! Olá! Eu sou o velho Calisto! Como você se chama, pequeno explorador?');
-  }, 300);
+  if (input) {
+    input.value = AppState.childName || '';
+    setTimeout(() => {
+      input.focus();
+      falarTexto('Hehehe! Olá! Eu sou o sábio Calisto! Como você se chama, pequeno explorador?');
+    }, 300);
+  }
 }
 
 function salvarNomeCrianca() {
   const input = document.getElementById('input-child-name');
-  const nome = input.value.trim();
+  const nome = input ? input.value.trim() : '';
   if (!nome) return;
 
   AppState.childName = nome;
   localStorage.setItem('CALISTO_CHILD_NAME', nome);
   atualizarNomeNaInterface();
 
-  document.getElementById('name-modal').classList.remove('open');
+  const modal = document.getElementById('name-modal');
+  if (modal) modal.classList.remove('open');
   sounds.playCorrect();
   confetti.burst(50);
   if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
 
-  const saudacao = `Hehehe! Muito bem, ${nome}! Eu sou o velho Calisto. Vamos explorar os mundos do saber juntos!`;
+  const saudacao = `Hehehe! Muito bem, ${nome}! Eu sou o sábio Calisto. Vamos explorar os mundos do saber juntos!`;
   falarTexto(saudacao);
 
   if (window.calistoWanderer) {
-    window.calistoWanderer.mostrarFala(`Vamos lá, ${nome}!`, 4000);
+    window.calistoWanderer.mostrarFala(`Vamos lá, ${nome}!`, 3500);
   }
 }
 window.salvarNomeCrianca = salvarNomeCrianca;
 
 function atualizarNomeNaInterface() {
   const nome = AppState.childName || 'Explorador';
-  document.getElementById('header-child-name').textContent = nome;
-  document.getElementById('hero-child-name').textContent = nome;
-  document.getElementById('cert-child-name').value = nome;
+  const hChild = document.getElementById('header-child-name');
+  const heroChild = document.getElementById('hero-child-name');
+  const certChild = document.getElementById('cert-child-name');
+  if (hChild) hChild.textContent = nome;
+  if (heroChild) heroChild.textContent = nome;
+  if (certChild) certChild.value = nome;
 }
 
 // ====================================================================
-// RENDERIZAÇÃO E NAVEGAÇÃO DOS WORKSPACES
+// RENDERIZAÇÃO DA GRADE PRINCIPAL INFANTIL (MUNDOS DO CONHECIMENTO)
+// 100% LIMPA DE QUALQUER CONTROLE OU TAG TÉCNICA
 // ====================================================================
 function atualizarEstatisticas() {
-  document.getElementById('user-stars').textContent = AppState.stars;
-  document.getElementById('user-trophies').textContent = AppState.trophies;
+  const uStars = document.getElementById('user-stars');
+  const uTrophies = document.getElementById('user-trophies');
+  if (uStars) uStars.textContent = AppState.stars;
+  if (uTrophies) uTrophies.textContent = AppState.trophies;
   localStorage.setItem('CALISTO_STARS', AppState.stars);
   localStorage.setItem('CALISTO_TROPHIES', AppState.trophies);
   localStorage.setItem('CALISTO_COMPLETED', JSON.stringify(AppState.completedWorkspaces));
@@ -451,43 +452,44 @@ function atualizarEstatisticas() {
 
 function renderizarGridWorkspaces() {
   const container = document.getElementById('workspaces-grid-container');
+  if (!container) return;
   container.innerHTML = '';
   const data = window.WORKSPACES_DATA || [];
 
-  document.getElementById('workspace-count-tag').textContent = `${data.length} Temas Disponíveis`;
+  const countTag = document.getElementById('workspace-count-tag');
+  if (countTag) countTag.textContent = `${data.length} Mundos Mágicos`;
 
   data.forEach((ws, index) => {
     const isCompleted = AppState.completedWorkspaces.includes(ws.id);
     const card = document.createElement('article');
     card.className = 'workspace-card';
+    card.setAttribute('aria-label', `Mundo ${ws.titulo}`);
+
     card.innerHTML = `
       <div class="card-header-bar" style="background: ${ws.cor || 'linear-gradient(135deg, #10B981, #059669)'}">
         <div class="card-icon-circle">${ws.icone || '📖'}</div>
-        <div style="display: flex; gap: 0.35rem; align-items: center;">
-          ${ws.isNotebookLM ? '<span class="notebooklm-tag">🏷️ NotebookLM</span>' : ''}
-          <span class="card-badge">#${index + 1}</span>
-        </div>
+        <span class="card-badge">Mundo #${index + 1}</span>
       </div>
       <div class="card-body">
         <h3 class="card-title">${ws.titulo}</h3>
         <p class="card-desc">${ws.subtitulo || ws.resumo}</p>
-        <div class="card-footer">
-          <span class="card-status">
-            ${isCompleted ? '⭐ Concluído!' : '🌱 Pronto para Explorar'}
+        <div class="card-footer-meta">
+          <span class="card-status ${isCompleted ? 'completed' : ''}">
+            ${isCompleted ? '⭐ Concluído!' : '🌱 Novo Mundo'}
           </span>
         </div>
         <div class="workspace-actions-row">
-          <button class="ws-action-btn pres" title="Assistir como Apresentação 3D Guiada pelo Calisto">
+          <button type="button" class="ws-action-btn pres" title="Assistir Apresentação Interativa 3D">
             🎬 Apresentação 3D
           </button>
-          <button class="ws-action-btn study" title="Abrir Sala de Estudos, Flashcards e Quiz">
-            📚 Sala & Quiz
+          <button type="button" class="ws-action-btn study" title="Jogar, ver infográficos e responder quizzes">
+            🎮 Jogar & Estudar
           </button>
         </div>
       </div>
     `;
 
-    // Botão de Apresentação 3D
+    // Botão Apresentação 3D
     const btnPres = card.querySelector('.ws-action-btn.pres');
     if (btnPres) {
       btnPres.addEventListener('click', (e) => {
@@ -497,7 +499,7 @@ function renderizarGridWorkspaces() {
       });
     }
 
-    // Botão de Sala de Estudos
+    // Botão Jogar e Estudar
     const btnStudy = card.querySelector('.ws-action-btn.study');
     if (btnStudy) {
       btnStudy.addEventListener('click', (e) => {
@@ -507,7 +509,7 @@ function renderizarGridWorkspaces() {
       });
     }
 
-    // Clique no corpo do cartão abre a Apresentação
+    // Clique geral no cartão abre a apresentação
     card.addEventListener('click', () => {
       sounds.playPop();
       abrirApresentacao(ws);
@@ -526,18 +528,15 @@ function abrirApresentacao(ws) {
   AppState.isAutoPlaying = false;
   clearTimeout(AppState.autoPlayTimer);
 
-  // Garante que o workspace tenha slides prontos
   if (!ws.slides || ws.slides.length === 0) {
     ws.slides = window.gerarSlidesParaWorkspace(ws);
   }
 
-  document.getElementById('pres-workspace-title').textContent = ws.titulo;
+  const titleEl = document.getElementById('pres-workspace-title');
+  if (titleEl) titleEl.textContent = ws.titulo;
+
   const sourceBadge = document.getElementById('pres-source-badge');
-  if (ws.isNotebookLM) {
-    sourceBadge.innerHTML = '🏷️ Projeto do NotebookLM';
-    sourceBadge.style.background = '#EDE9FE';
-    sourceBadge.style.color = '#6D28D9';
-  } else {
+  if (sourceBadge) {
     sourceBadge.innerHTML = '🦜 Apresentação do Calisto';
     sourceBadge.style.background = '#EEF2FF';
     sourceBadge.style.color = '#4338CA';
@@ -549,9 +548,14 @@ function abrirApresentacao(ws) {
     autoBtn.innerHTML = '▶️ Auto-Play';
   }
 
-  document.getElementById('hub-view').style.display = 'none';
-  document.getElementById('study-view').classList.remove('active');
-  document.getElementById('presentation-view').classList.add('active');
+  const hub = document.getElementById('hub-view');
+  const study = document.getElementById('study-view');
+  const pres = document.getElementById('presentation-view');
+
+  if (hub) hub.style.display = 'none';
+  if (study) study.classList.remove('active');
+  if (pres) pres.classList.add('active');
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (window.parrot3DInstances && window.parrot3DInstances.presentation) {
@@ -569,8 +573,12 @@ function fecharApresentacao() {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(false);
 
-  document.getElementById('presentation-view').classList.remove('active');
-  document.getElementById('hub-view').style.display = 'block';
+  const pres = document.getElementById('presentation-view');
+  const hub = document.getElementById('hub-view');
+
+  if (pres) pres.classList.remove('active');
+  if (hub) hub.style.display = 'block';
+
   renderizarGridWorkspaces();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -583,96 +591,99 @@ function carregarSlideAtual() {
   const slide = ws.slides[AppState.currentSlideIdx];
   const nome = AppState.childName || 'Pequeno Explorador';
 
-  // Atualiza Metadados do Slide
-  document.getElementById('pres-slide-pill').textContent = `Slide ${AppState.currentSlideIdx + 1} de ${total} ⭐`;
+  const slidePill = document.getElementById('pres-slide-pill');
+  if (slidePill) slidePill.textContent = `Slide ${AppState.currentSlideIdx + 1} de ${total} ⭐`;
   
   const typeLabels = {
     'intro': '🌟 Abertura',
     'conceito': '📖 Fundamentos',
+    'infografico': '📊 Mapa Visual',
     'audio': '🎙️ Áudio Overview',
     'curiosidade': '💡 Curiosidades',
     'desafio': '🃏 Desafio Rápido',
     'conclusao': '🏆 Conclusão'
   };
-  document.getElementById('pres-slide-type').textContent = typeLabels[slide.tipo] || '✨ Saber';
+  const typePill = document.getElementById('pres-slide-type');
+  if (typePill) typePill.textContent = typeLabels[slide.tipo] || '✨ Saber';
 
-  // Ícone, Título e Subtítulo
-  document.getElementById('pres-slide-icon').textContent = slide.icone || ws.icone || '🌟';
-  document.getElementById('pres-slide-title').textContent = slide.titulo;
-  document.getElementById('pres-slide-sub').textContent = slide.subtitulo || '';
+  const iconEl = document.getElementById('pres-slide-icon');
+  const titleEl = document.getElementById('pres-slide-title');
+  const subEl = document.getElementById('pres-slide-sub');
 
-  // Destaque
+  if (iconEl) iconEl.textContent = slide.icone || ws.icone || '🌟';
+  if (titleEl) titleEl.textContent = slide.titulo;
+  if (subEl) subEl.textContent = slide.subtitulo || '';
+
   const highlightCard = document.getElementById('pres-slide-highlight-card');
   const highlightText = document.getElementById('pres-slide-highlight-text');
-  if (slide.destaque) {
+  if (slide.destaque && highlightCard && highlightText) {
     highlightCard.style.display = 'block';
     highlightText.textContent = slide.destaque;
-  } else {
+  } else if (highlightCard) {
     highlightCard.style.display = 'none';
   }
 
-  // Infográfico Visual no Slide
   const presInfographicBox = document.getElementById('pres-slide-infographic-box');
   const presInfographicContent = document.getElementById('pres-infographic-content');
-  if (slide.tipo === 'infografico' && slide.infografico) {
+  if (slide.tipo === 'infografico' && slide.infografico && presInfographicBox && presInfographicContent) {
     presInfographicBox.style.display = 'block';
     renderizarInfograficoNoSlide(slide.infografico, presInfographicContent);
-  } else {
+  } else if (presInfographicBox) {
     presInfographicBox.style.display = 'none';
   }
 
-  // Tópicos
   const bulletsList = document.getElementById('pres-slide-bullets');
-  bulletsList.innerHTML = '';
-  if (slide.tipo !== 'infografico' && slide.topicos && slide.topicos.length > 0) {
-    slide.topicos.forEach(topic => {
-      const li = document.createElement('li');
-      li.textContent = topic;
-      bulletsList.appendChild(li);
-    });
+  if (bulletsList) {
+    bulletsList.innerHTML = '';
+    if (slide.tipo !== 'infografico' && slide.topicos && slide.topicos.length > 0) {
+      slide.topicos.forEach(topic => {
+        const li = document.createElement('li');
+        li.textContent = topic;
+        bulletsList.appendChild(li);
+      });
+    }
   }
 
-  // Desafio Interativo / Flashcard no Slide
   const interactiveBox = document.getElementById('pres-slide-interactive-box');
   const interactiveQ = document.getElementById('pres-interactive-q');
   const interactiveA = document.getElementById('pres-interactive-a');
-  if (slide.tipo === 'desafio' && slide.respostaDestaque) {
+  if (slide.tipo === 'desafio' && slide.respostaDestaque && interactiveBox) {
     interactiveBox.style.display = 'block';
-    interactiveQ.textContent = slide.destaque || 'Desafio do Calisto';
-    interactiveA.style.display = 'none';
-    interactiveA.textContent = slide.respostaDestaque;
-  } else {
+    if (interactiveQ) interactiveQ.textContent = slide.destaque || 'Desafio do Calisto';
+    if (interactiveA) {
+      interactiveA.style.display = 'none';
+      interactiveA.textContent = slide.respostaDestaque;
+    }
+  } else if (interactiveBox) {
     interactiveBox.style.display = 'none';
   }
 
-  // Áudio Overview do NotebookLM
   const audioBox = document.getElementById('pres-slide-audio-box');
   const audioPlayer = document.getElementById('pres-audio-player');
-  if (slide.tipo === 'audio' && slide.audioUrl) {
+  if (slide.tipo === 'audio' && slide.audioUrl && audioBox && audioPlayer) {
     audioBox.style.display = 'block';
     audioPlayer.src = slide.audioUrl;
-  } else {
+  } else if (audioBox && audioPlayer) {
     audioBox.style.display = 'none';
     audioPlayer.src = '';
   }
 
-  // Fala do Apresentador Calisto
   const speakerSpeech = document.getElementById('pres-speaker-speech');
   const textoFala = slide.falaCalisto || `Hehehe! Vamos aprender sobre ${slide.titulo}, ${nome}! Preste atenção aos detalhes!`;
-  speakerSpeech.textContent = textoFala;
+  if (speakerSpeech) speakerSpeech.textContent = textoFala;
 
-  // Atualizar Indicador de Bolinhas
   const dotsContainer = document.getElementById('pres-dots-container');
-  dotsContainer.innerHTML = '';
-  for (let i = 0; i < total; i++) {
-    const dot = document.createElement('div');
-    dot.className = `pres-dot ${i === AppState.currentSlideIdx ? 'active' : ''}`;
-    dot.title = `Ir para Slide ${i + 1}`;
-    dot.addEventListener('click', () => irParaSlide(i));
-    dotsContainer.appendChild(dot);
+  if (dotsContainer) {
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const dot = document.createElement('div');
+      dot.className = `pres-dot ${i === AppState.currentSlideIdx ? 'active' : ''}`;
+      dot.title = `Ir para Slide ${i + 1}`;
+      dot.addEventListener('click', () => irParaSlide(i));
+      dotsContainer.appendChild(dot);
+    }
   }
 
-  // Falar o conteúdo com voz masculina do Calisto
   narrarSlideAtual();
 }
 
@@ -722,7 +733,6 @@ function narrarSlideAtual() {
   falarTexto(textoFala, () => {
     if (speakingAnim) speakingAnim.style.display = 'none';
     
-    // Se o Auto-Play estiver ativo, passa para o próximo slide após 2.5s
     if (AppState.isAutoPlaying) {
       clearTimeout(AppState.autoPlayTimer);
       AppState.autoPlayTimer = setTimeout(() => {
@@ -730,7 +740,6 @@ function narrarSlideAtual() {
           if (AppState.currentSlideIdx < ws.slides.length - 1) {
             proximoSlide();
           } else {
-            // Fim da apresentação
             AppState.isAutoPlaying = false;
             const autoBtn = document.getElementById('btn-pres-autoplay');
             if (autoBtn) {
@@ -755,7 +764,6 @@ function proximoSlide() {
     AppState.currentSlideIdx++;
     carregarSlideAtual();
   } else {
-    // Último slide atingido: celebração e convite para a sala de estudos
     confetti.burst(80);
     sounds.playFanfare();
     if (confirm('🎉 Parabéns! Você concluiu todos os slides! Deseja ir para a Sala de Estudos com Infográficos e Quizzes agora?')) {
@@ -818,45 +826,54 @@ function abrirWorkspace(ws) {
 
   const nome = AppState.childName || 'Explorador';
 
-  document.getElementById('current-workspace-icon').textContent = ws.icone || '📖';
-  document.getElementById('current-workspace-title').textContent = ws.titulo;
-  document.getElementById('current-workspace-sub').textContent = ws.subtitulo || '';
+  const iconEl = document.getElementById('current-workspace-icon');
+  const titleEl = document.getElementById('current-workspace-title');
+  const subEl = document.getElementById('current-workspace-sub');
 
-  // Configura Vídeo ou Áudio
+  if (iconEl) iconEl.textContent = ws.icone || '📖';
+  if (titleEl) titleEl.textContent = ws.titulo;
+  if (subEl) subEl.textContent = ws.subtitulo || '';
+
   const videoWrapper = document.getElementById('study-video-wrapper');
   const videoFrame = document.getElementById('study-video-frame');
   const audioOverviewCard = document.getElementById('study-audio-overview-card');
   const audioElement = document.getElementById('study-audio-element');
 
   if (ws.videoUrl) {
-    videoWrapper.style.display = 'block';
-    videoFrame.src = ws.videoUrl;
+    if (videoWrapper) videoWrapper.style.display = 'block';
+    if (videoFrame) videoFrame.src = ws.videoUrl;
     if (audioOverviewCard) audioOverviewCard.style.display = 'none';
   } else {
-    videoWrapper.style.display = 'none';
-    videoFrame.src = '';
+    if (videoWrapper) videoWrapper.style.display = 'none';
+    if (videoFrame) videoFrame.src = '';
     if (audioOverviewCard) {
       audioOverviewCard.style.display = 'block';
       if (audioElement && ws.audioUrl) audioElement.src = ws.audioUrl;
     }
   }
 
-  document.getElementById('study-summary-text').textContent = ws.resumo;
+  const sumText = document.getElementById('study-summary-text');
+  if (sumText) sumText.textContent = ws.resumo;
+
   const topicsList = document.getElementById('study-topics-list');
-  topicsList.innerHTML = '';
-  (ws.topicos || []).forEach(topico => {
-    const li = document.createElement('li');
-    li.textContent = topico;
-    topicsList.appendChild(li);
-  });
+  if (topicsList) {
+    topicsList.innerHTML = '';
+    (ws.topicos || []).forEach(topico => {
+      const li = document.createElement('li');
+      li.textContent = topico;
+      topicsList.appendChild(li);
+    });
+  }
 
   const curList = document.getElementById('study-curiosities-list');
-  curList.innerHTML = '';
-  (ws.curiosidades || []).forEach(cur => {
-    const li = document.createElement('li');
-    li.textContent = cur;
-    curList.appendChild(li);
-  });
+  if (curList) {
+    curList.innerHTML = '';
+    (ws.curiosidades || []).forEach(cur => {
+      const li = document.createElement('li');
+      li.textContent = cur;
+      curList.appendChild(li);
+    });
+  }
 
   renderizarInfograficosDaSala();
   carregarFlashcardAtual();
@@ -864,11 +881,17 @@ function abrirWorkspace(ws) {
   ativarAba('tab-video');
 
   const calistoIntro = `Hehehe! ${nome}, bem-vindo ao mundo ${ws.titulo}! Assista à apresentação, explore os infográficos e acerte o quiz comigo!`;
-  document.getElementById('paco-study-speech').textContent = calistoIntro;
+  const speechEl = document.getElementById('paco-study-speech');
+  if (speechEl) speechEl.textContent = calistoIntro;
 
-  document.getElementById('hub-view').style.display = 'none';
-  document.getElementById('presentation-view').classList.remove('active');
-  document.getElementById('study-view').classList.add('active');
+  const hub = document.getElementById('hub-view');
+  const pres = document.getElementById('presentation-view');
+  const study = document.getElementById('study-view');
+
+  if (hub) hub.style.display = 'none';
+  if (pres) pres.classList.remove('active');
+  if (study) study.classList.add('active');
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (window.parrot3DInstances && window.parrot3DInstances.study) {
@@ -889,7 +912,7 @@ function renderizarInfograficosDaSala() {
   if (!container) return;
 
   container.innerHTML = '';
-  introText.textContent = `Aprenda os conceitos de "${ws.titulo}" com o mapa visual elaborado pelo Calisto:`;
+  if (introText) introText.textContent = `Aprenda os conceitos de "${ws.titulo}" com o mapa visual elaborado pelo Calisto:`;
 
   const info = (ws.infograficos && ws.infograficos.length > 0) ? ws.infograficos[0] : null;
 
@@ -918,7 +941,6 @@ function renderizarInfograficosDaSala() {
       container.appendChild(statCard);
     }
   } else {
-    // Gera infográfico baseado nos tópicos
     (ws.topicos || []).slice(0, 4).forEach((t, i) => {
       const card = document.createElement('div');
       card.className = 'infographic-card';
@@ -940,25 +962,228 @@ function fecharWorkspace() {
   if (videoFrame) videoFrame.src = '';
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
-  document.getElementById('study-view').classList.remove('active');
-  document.getElementById('presentation-view').classList.remove('active');
-  document.getElementById('hub-view').style.display = 'block';
+  const study = document.getElementById('study-view');
+  const pres = document.getElementById('presentation-view');
+  const hub = document.getElementById('hub-view');
+
+  if (study) study.classList.remove('active');
+  if (pres) pres.classList.remove('active');
+  if (hub) hub.style.display = 'block';
+
   renderizarGridWorkspaces();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ====================================================================
+// CONTROLE DE ABAS DA SALA DE ESTUDOS
+// ====================================================================
+function ativarAba(tabId) {
+  sounds.playPop();
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.classList.toggle('active', pane.id === tabId);
+  });
+
+  const speech = document.getElementById('paco-study-speech');
+  const nome = AppState.childName || 'explorador';
+
+  if (!speech) return;
+  if (tabId === 'tab-video') {
+    speech.textContent = `Assista ao vídeo explicativo com atenção, ${nome}, para aprender todos os segredos!`;
+  } else if (tabId === 'tab-infographics') {
+    speech.textContent = `Veja só este infográfico, ${nome}! Cada cartão explica uma ideia mágica passo a passo!`;
+  } else if (tabId === 'tab-flashcards') {
+    speech.textContent = `Toque no cartão para girar e ver a resposta mágica, ${nome}!`;
+  } else if (tabId === 'tab-quiz') {
+    speech.textContent = `Hora do desafio, ${nome}! Quero ver se sua memória é tão boa quanto o meu bico afiado!`;
+  } else if (tabId === 'tab-curiosities') {
+    speech.textContent = `Descubra curiosidades incríveis que pouca gente sabe, ${nome}!`;
+  }
+}
+
+// ====================================================================
+// FLASHCARDS 3D
+// ====================================================================
+function carregarFlashcardAtual() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.flashcards || ws.flashcards.length === 0) return;
+
+  const card = ws.flashcards[AppState.currentFlashcardIdx];
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) inner.classList.remove('flipped');
+
+  const qEl = document.getElementById('fc-question');
+  const aEl = document.getElementById('fc-answer');
+  const counterEl = document.getElementById('fc-counter');
+
+  if (qEl) qEl.textContent = card.pergunta;
+  if (aEl) aEl.textContent = card.resposta;
+  if (counterEl) counterEl.textContent = `${AppState.currentFlashcardIdx + 1} / ${ws.flashcards.length}`;
+}
+
+function virarFlashcard() {
+  sounds.playPop();
+  const inner = document.getElementById('flashcard-inner');
+  if (inner) inner.classList.toggle('flipped');
+}
+
+function proximoFlashcard() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.flashcards) return;
+  sounds.playPop();
+  AppState.currentFlashcardIdx = (AppState.currentFlashcardIdx + 1) % ws.flashcards.length;
+  carregarFlashcardAtual();
+}
+
+function anteriorFlashcard() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.flashcards) return;
+  sounds.playPop();
+  AppState.currentFlashcardIdx = (AppState.currentFlashcardIdx - 1 + ws.flashcards.length) % ws.flashcards.length;
+  carregarFlashcardAtual();
+}
+
+// ====================================================================
+// QUIZ GAMIFICADO
+// ====================================================================
+function carregarQuizAtual() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.quiz || ws.quiz.length === 0) return;
+
+  AppState.quizAnswerLocked = false;
+  const q = ws.quiz[AppState.currentQuizIdx];
+  const total = ws.quiz.length;
+
+  const indicator = document.getElementById('quiz-status-indicator');
+  if (indicator) indicator.textContent = `Pergunta ${AppState.currentQuizIdx + 1} de ${total}`;
+  
+  let livesStr = '';
+  for (let i = 0; i < AppState.quizLives; i++) livesStr += '❤️';
+  if (AppState.quizLives === 0) livesStr = '💔 Sem vidas';
+  const livesEl = document.getElementById('quiz-lives-icons');
+  if (livesEl) livesEl.textContent = livesStr;
+
+  const qText = document.getElementById('quiz-question-text');
+  if (qText) qText.textContent = q.pergunta;
+  
+  const fbBox = document.getElementById('quiz-feedback-box');
+  if (fbBox) fbBox.className = 'quiz-feedback-box';
+  
+  const optsContainer = document.getElementById('quiz-options-container');
+  if (optsContainer) {
+    optsContainer.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+
+    q.opcoes.forEach((opcao, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-option-btn';
+      btn.innerHTML = `
+        <span class="quiz-option-letter">${letters[idx] || (idx + 1)}</span>
+        <span>${opcao}</span>
+      `;
+      btn.addEventListener('click', () => verificarRespostaQuiz(idx, btn));
+      optsContainer.appendChild(btn);
+    });
+  }
+}
+
+function verificarRespostaQuiz(selectedIdx, btnElement) {
+  if (AppState.quizAnswerLocked) return;
+  AppState.quizAnswerLocked = true;
+
+  const ws = AppState.currentWorkspace;
+  const q = ws.quiz[AppState.currentQuizIdx];
+  const correctIdx = q.respostaCorreta;
+  const isCorrect = (selectedIdx === correctIdx);
+  const nome = AppState.childName || 'campeão';
+
+  const fbBox = document.getElementById('quiz-feedback-box');
+  const fbMsg = document.getElementById('quiz-feedback-msg');
+  const fbExp = document.getElementById('quiz-feedback-explanation');
+  const pacoSpeech = document.getElementById('paco-study-speech');
+
+  if (isCorrect) {
+    sounds.playCorrect();
+    confetti.burst(50);
+    if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
+
+    btnElement.classList.add('correct');
+    if (fbBox) fbBox.className = 'quiz-feedback-box show correct-fb';
+    if (fbMsg) fbMsg.innerHTML = `🎉 Resposta Certa! O Calisto adorou, ${nome}! ⭐`;
+    if (fbExp) fbExp.textContent = q.explicacao || 'Muito bem pensado!';
+    if (pacoSpeech) pacoSpeech.textContent = `Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || 'Você é um gênio!'}`;
+    falarTexto(`Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || ''}`);
+  } else {
+    sounds.playWrong();
+    if (window.setParrotMoodAll) window.setParrotMoodAll('angry');
+
+    btnElement.classList.add('wrong');
+    AppState.quizLives = Math.max(0, AppState.quizLives - 1);
+    
+    const allBtns = document.querySelectorAll('.quiz-option-btn');
+    if (allBtns[correctIdx]) allBtns[correctIdx].classList.add('correct');
+
+    if (fbBox) fbBox.className = 'quiz-feedback-box show wrong-fb';
+    if (fbMsg) fbMsg.innerHTML = `Ai minhas penas, ${nome}! Olha a explicação do Calisto:`;
+    if (fbExp) fbExp.textContent = q.explicacao || 'Preste atenção na dica do Calisto!';
+    if (pacoSpeech) pacoSpeech.textContent = `Ai minhas peninhas velhas, ${nome}! A resposta certa é a verde. Olha aqui: ${q.explicacao || ''}`;
+    falarTexto(`Ai minhas peninhas velhas, ${nome}! A resposta certa era outra! Olha a dica do Calisto!`);
+  }
+
+  let livesStr = '';
+  for (let i = 0; i < AppState.quizLives; i++) livesStr += '❤️';
+  if (AppState.quizLives === 0) livesStr = '💔 Tente novamente!';
+  const livesEl = document.getElementById('quiz-lives-icons');
+  if (livesEl) livesEl.textContent = livesStr;
+}
+
+function avancarQuiz() {
+  sounds.playPop();
+  const ws = AppState.currentWorkspace;
+  if (!ws) return;
+
+  AppState.currentQuizIdx++;
+  if (AppState.currentQuizIdx < ws.quiz.length) {
+    carregarQuizAtual();
+  } else {
+    concluirWorkspace();
+  }
+}
+
+function concluirWorkspace() {
+  const ws = AppState.currentWorkspace;
+  const nome = AppState.childName || 'Pequeno Explorador';
+  sounds.playFanfare();
+  confetti.burst(140);
+  if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
+
+  AppState.stars += 3;
+  if (!AppState.completedWorkspaces.includes(ws.id)) {
+    AppState.completedWorkspaces.push(ws.id);
+    AppState.trophies += 1;
+  }
+  atualizarEstatisticas();
+
+  const certChild = document.getElementById('cert-child-name');
+  if (certChild) certChild.value = nome;
+  const victoryModal = document.getElementById('victory-modal');
+  if (victoryModal) victoryModal.classList.add('open');
+  falarTexto(`Hehehe! Vitória, ${nome}! Pelos meus cem anos de penas, nunca vi aluno tão dedicado! Parabéns!`);
+}
+
+// ====================================================================
 // CENTRAL DO EDUCADOR: AUTENTICAÇÃO POR PIN, GESTÃO & GEMINI API
 // ====================================================================
-
 function getEducatorPin() {
   return localStorage.getItem('CALISTO_EDUCATOR_PIN') || '1234';
 }
 
 function salvarNovoPinEducador() {
   sounds.playPop();
-  const newPin = document.getElementById('input-new-pin').value.trim();
-  const confirmPin = document.getElementById('input-confirm-pin').value.trim();
+  const newPin = (document.getElementById('input-new-pin')?.value || '').trim();
+  const confirmPin = (document.getElementById('input-confirm-pin')?.value || '').trim();
 
   if (!newPin || newPin.length < 4) {
     alert('O PIN deve ter entre 4 e 6 dígitos.');
@@ -977,30 +1202,37 @@ function salvarNovoPinEducador() {
   document.getElementById('input-new-pin').value = '';
   document.getElementById('input-confirm-pin').value = '';
 }
+window.salvarNovoPinEducador = salvarNovoPinEducador;
 
 function abrirModalEducador() {
   sounds.playPop();
   if (AppState.educatorAuthenticated) {
-    document.getElementById('educator-modal').classList.add('open');
+    const edModal = document.getElementById('educator-modal');
+    if (edModal) edModal.classList.add('open');
     renderizarListaWorkspacesEducador();
     atualizarStatusGeminiKey();
   } else {
-    document.getElementById('educator-pin-modal').classList.add('open');
-    document.getElementById('input-educator-pin').value = '';
-    document.getElementById('pin-error-msg').textContent = '';
+    const pinModal = document.getElementById('educator-pin-modal');
+    if (pinModal) pinModal.classList.add('open');
+    const pinInput = document.getElementById('input-educator-pin');
+    const pinErr = document.getElementById('pin-error-msg');
+    if (pinInput) pinInput.value = '';
+    if (pinErr) pinErr.textContent = '';
     setTimeout(() => {
-      const pinInput = document.getElementById('input-educator-pin');
       if (pinInput) pinInput.focus();
-    }, 100);
+    }, 120);
   }
 }
+window.abrirModalEducador = abrirModalEducador;
 
 function fecharModalPin() {
-  document.getElementById('educator-pin-modal').classList.remove('open');
+  const pinModal = document.getElementById('educator-pin-modal');
+  if (pinModal) pinModal.classList.remove('open');
 }
+window.fecharModalPin = fecharModalPin;
 
 function validarPinEducador() {
-  const input = document.getElementById('input-educator-pin').value.trim();
+  const input = (document.getElementById('input-educator-pin')?.value || '').trim();
   const realPin = getEducatorPin();
   const errorMsg = document.getElementById('pin-error-msg');
 
@@ -1008,30 +1240,36 @@ function validarPinEducador() {
     AppState.educatorAuthenticated = true;
     sounds.playFanfare();
     fecharModalPin();
-    document.getElementById('educator-modal').classList.add('open');
+    const edModal = document.getElementById('educator-modal');
+    if (edModal) edModal.classList.add('open');
     renderizarListaWorkspacesEducador();
     atualizarStatusGeminiKey();
   } else {
     sounds.playWrong();
     if (errorMsg) errorMsg.textContent = '❌ PIN incorreto! Tente novamente.';
-    document.getElementById('input-educator-pin').value = '';
+    const pinInput = document.getElementById('input-educator-pin');
+    if (pinInput) pinInput.value = '';
   }
 }
+window.validarPinEducador = validarPinEducador;
 
 function bloquearEducador() {
   AppState.educatorAuthenticated = false;
   sounds.playPop();
-  document.getElementById('educator-modal').classList.remove('open');
+  const edModal = document.getElementById('educator-modal');
+  if (edModal) edModal.classList.remove('open');
 }
+window.bloquearEducador = bloquearEducador;
 
 function fecharModalEducador() {
-  document.getElementById('educator-modal').classList.remove('open');
+  const edModal = document.getElementById('educator-modal');
+  if (edModal) edModal.classList.remove('open');
 }
+window.fecharModalEducador = fecharModalEducador;
 
 // --------------------------------------------------------------------
 // GERENCIADOR DE WORKSPACES DO EDUCADOR (LISTAR, EXCLUIR, RESTAURAR)
 // --------------------------------------------------------------------
-
 function renderizarListaWorkspacesEducador() {
   const container = document.getElementById('educator-workspaces-list');
   const countHeader = document.getElementById('educator-ws-count-header');
@@ -1039,9 +1277,9 @@ function renderizarListaWorkspacesEducador() {
 
   container.innerHTML = '';
   const data = window.WORKSPACES_DATA || [];
-  if (countHeader) countHeader.textContent = `${data.length} Workspaces Ativos Cadastrados`;
+  if (countHeader) countHeader.textContent = `${data.length} Workspaces Cadastrados`;
 
-  data.forEach((ws, idx) => {
+  data.forEach((ws) => {
     const row = document.createElement('div');
     row.className = 'educator-ws-row';
     const isNlm = ws.isNotebookLM || (typeof ws.id === 'string' && ws.id.startsWith('nlm_'));
@@ -1054,7 +1292,7 @@ function renderizarListaWorkspacesEducador() {
           <div class="educator-ws-meta">
             <span class="ed-ws-badge ${isNlm ? 'nlm' : 'default'}">${isNlm ? '🏷️ NotebookLM / IA' : '🌱 Padrão'}</span>
             <span class="ed-ws-badge stats">${ws.topicos ? ws.topicos.length : 0} Tópicos</span>
-            <span class="ed-ws-badge stats">${ws.quiz ? ws.quiz.length : 0} Perguntas de Quiz</span>
+            <span class="ed-ws-badge stats">${ws.quiz ? ws.quiz.length : 0} Quizzes</span>
           </div>
         </div>
       </div>
@@ -1068,14 +1306,14 @@ function renderizarListaWorkspacesEducador() {
       </div>
     `;
 
-    // Botão Ver Apresentação
-    row.querySelector('.btn-ed-view-pres').addEventListener('click', () => {
+    // Botão Ver
+    row.querySelector('.btn-ed-view-pres')?.addEventListener('click', () => {
       fecharModalEducador();
       abrirApresentacao(ws);
     });
 
     // Botão Excluir
-    row.querySelector('.btn-ed-delete-ws').addEventListener('click', () => {
+    row.querySelector('.btn-ed-delete-ws')?.addEventListener('click', () => {
       excluirWorkspacePorId(ws.id, ws.titulo);
     });
 
@@ -1101,7 +1339,8 @@ function restaurarPadroesEducador() {
   if (confirm('Deseja restaurar os 10 temas educativos originais do Calisto?')) {
     window.WORKSPACES_DATA = window.restaurarWorkspacesPadrao();
     sounds.playPop();
-    document.getElementById('json-editor-input').value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
+    const jsonInput = document.getElementById('json-editor-input');
+    if (jsonInput) jsonInput.value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
     renderizarGridWorkspaces();
     renderizarListaWorkspacesEducador();
     alert('↺ 10 Temas padrão restaurados com sucesso!');
@@ -1111,7 +1350,6 @@ function restaurarPadroesEducador() {
 // --------------------------------------------------------------------
 // INTEGRAÇÃO COM A API DO GOOGLE GEMINI & NOTEBOOKLM
 // --------------------------------------------------------------------
-
 function getGeminiApiKey() {
   return localStorage.getItem('CALISTO_GEMINI_KEY') || '';
 }
@@ -1119,7 +1357,7 @@ function getGeminiApiKey() {
 function salvarChaveGemini() {
   sounds.playPop();
   const input = document.getElementById('gemini-api-key-input');
-  const key = input.value.trim();
+  const key = input ? input.value.trim() : '';
   localStorage.setItem('CALISTO_GEMINI_KEY', key);
   atualizarStatusGeminiKey();
   sounds.playCorrect();
@@ -1147,9 +1385,12 @@ function carregarPresetEducador(index) {
   sounds.playPop();
   const presets = window.NOTEBOOKLM_PRESETS || [];
   if (presets[index]) {
-    document.getElementById('ed-notebooklm-url-input').value = presets[index].url;
-    document.getElementById('ed-manual-content-input').value = presets[index].rawContent;
-    document.getElementById('ed-topic-name-input').value = presets[index].nome.replace(/^[^\w\s]+/, '').trim();
+    const urlInput = document.getElementById('ed-notebooklm-url-input');
+    const manualInput = document.getElementById('ed-manual-content-input');
+    const topicInput = document.getElementById('ed-topic-name-input');
+    if (urlInput) urlInput.value = presets[index].url;
+    if (manualInput) manualInput.value = presets[index].rawContent;
+    if (topicInput) topicInput.value = presets[index].nome.replace(/^[^\w\s]+/, '').trim();
   }
 }
 
@@ -1159,19 +1400,36 @@ function carregarArquivoEducador(e) {
 
   const reader = new FileReader();
   reader.onload = (evt) => {
-    document.getElementById('ed-manual-content-input').value = evt.target.result;
+    const manualInput = document.getElementById('ed-manual-content-input');
+    if (manualInput) manualInput.value = evt.target.result;
     sounds.playPop();
   };
   reader.readAsText(file);
 }
 
 /**
+ * Busca de conteúdo via endpoint local ou fallback
+ */
+async function buscarConteudoDaUrl(url) {
+  try {
+    const response = await fetch(`/api/fetch-notebooklm?url=${encodeURIComponent(url)}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn('Busca remota não disponível, processando localmente:', err);
+  }
+  return { title: '', content: '' };
+}
+
+/**
  * Geração de Workspace: via API do Gemini ou Parser inteligente de URL/Texto
  */
 async function processarGeracaoEducador() {
-  const urlInput = document.getElementById('ed-notebooklm-url-input').value.trim();
-  const topicInput = document.getElementById('ed-topic-name-input').value.trim();
-  const manualText = document.getElementById('ed-manual-content-input').value.trim();
+  const urlInput = (document.getElementById('ed-notebooklm-url-input')?.value || '').trim();
+  const topicInput = (document.getElementById('ed-topic-name-input')?.value || '').trim();
+  const manualText = (document.getElementById('ed-manual-content-input')?.value || '').trim();
   const apiKey = getGeminiApiKey();
 
   if (!urlInput && !topicInput && !manualText) {
@@ -1184,28 +1442,26 @@ async function processarGeracaoEducador() {
   const progBar = document.getElementById('ed-progress-bar');
   const progStatus = document.getElementById('ed-progress-status');
 
-  progBox.style.display = 'block';
-  progBar.style.width = '20%';
-  progStatus.innerHTML = '📡 Conectando ao material...';
+  if (progBox) progBox.style.display = 'block';
+  if (progBar) progBar.style.width = '20%';
+  if (progStatus) progStatus.innerHTML = '📡 Conectando ao material...';
   sounds.playPop();
 
   try {
     let ws = null;
 
-    // Se tiver chave do Gemini configurada, gera módulo de alta qualidade via API
     if (apiKey && apiKey.length > 10) {
-      progBar.style.width = '50%';
-      progStatus.innerHTML = '🤖 Chamando a API do Gemini 2.0 Flash para estruturar o estudo infantil...';
+      if (progBar) progBar.style.width = '50%';
+      if (progStatus) progStatus.innerHTML = '🤖 Chamando a API do Gemini 2.0 Flash para estruturar o estudo infantil...';
       
       ws = await gerarComGeminiAPI(apiKey, topicInput, urlInput, manualText);
     } else {
-      // Fallback sem chave: faz busca de URL ou sintetiza via motor local
       let rawContent = manualText;
       let fetchedTitle = topicInput;
 
       if (urlInput) {
-        progBar.style.width = '45%';
-        progStatus.innerHTML = `📥 Baixando materiais em <strong>${urlInput.substring(0, 35)}...</strong>`;
+        if (progBar) progBar.style.width = '45%';
+        if (progStatus) progStatus.innerHTML = `📥 Baixando materiais em <strong>${urlInput.substring(0, 35)}...</strong>`;
         try {
           const fetchedData = await buscarConteudoDaUrl(urlInput);
           if (fetchedData && fetchedData.content) {
@@ -1215,42 +1471,39 @@ async function processarGeracaoEducador() {
         } catch (e) {}
       }
 
-      progBar.style.width = '75%';
-      progStatus.innerHTML = '🧠 Estruturando infográficos, quiz, flashcards e apresentação...';
+      if (progBar) progBar.style.width = '75%';
+      if (progStatus) progStatus.innerHTML = '🧠 Estruturando infográficos, quiz, flashcards e apresentação...';
       await new Promise(r => setTimeout(r, 400));
 
       ws = extrairMaterialCompleto(urlInput, rawContent, fetchedTitle || topicInput);
     }
 
-    progBar.style.width = '100%';
-    progStatus.innerHTML = '✨ Workspace criado com sucesso!';
+    if (progBar) progBar.style.width = '100%';
+    if (progStatus) progStatus.innerHTML = '✨ Workspace criado com sucesso!';
     await new Promise(r => setTimeout(r, 300));
 
-    // Adiciona ao topo da lista
     window.WORKSPACES_DATA.unshift(ws);
     window.salvarWorkspaces(window.WORKSPACES_DATA);
 
-    // Atualiza a tela
     renderizarGridWorkspaces();
     renderizarListaWorkspacesEducador();
 
     fecharModalEducador();
-    progBox.style.display = 'none';
+    if (progBox) progBox.style.display = 'none';
     sounds.playFanfare();
     confetti.burst(140);
 
-    // Abre imediatamente a nova Apresentação 3D do Calisto!
     abrirApresentacao(ws);
 
   } catch (err) {
     sounds.playWrong();
-    progBox.style.display = 'none';
+    if (progBox) progBox.style.display = 'none';
     alert('Erro ao gerar workspace: ' + err.message);
   }
 }
 
 /**
- * Chamada à API Oficial do Google Gemini para estruturar o módulo infantil
+ * Chamada à API Oficial do Google Gemini
  */
 async function gerarComGeminiAPI(apiKey, tema, url, texto) {
   const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
@@ -1297,69 +1550,55 @@ Gere um módulo educacional completo para crianças em formato JSON EXATO (sem m
   ],
   "flashcards": [
     { "pergunta": "Pergunta intrigante para a criança?", "resposta": "Resposta mágica e clara!" },
-    { "pergunta": "Outra pergunta sobre o tema?", "resposta": "Explicação divertida!" }
+    { "pergunta": "Pergunta curiosa sobre o tema?", "resposta": "Explicação divertida do Calisto!" }
   ],
   "quiz": [
     {
-      "pergunta": "Pergunta de fixação número 1?",
-      "opcoes": ["Opção A correta", "Opção B incorreta", "Opção C incorreta", "Opção D incorreta"],
+      "pergunta": "Pergunta clara de fixação?",
+      "opcoes": ["Alternativa Correta", "Opção Curiosa B", "Opção C", "Opção D"],
       "respostaCorreta": 0,
-      "explicacao": "Explicação alegre do sábio Calisto parabenizando!"
-    },
-    {
-      "pergunta": "Pergunta de fixação número 2?",
-      "opcoes": ["Opção A incorreta", "Opção B correta", "Opção C incorreta", "Opção D incorreta"],
-      "respostaCorreta": 1,
-      "explicacao": "Explicação do sábio Calisto!"
+      "explicacao": "Explicação calorosa e educativa do sábio Calisto!"
     }
   ]
 }`;
 
-  const res = await fetch(apiUrl, {
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.4
-      }
+      generationConfig: { responseMimeType: 'application/json' }
     })
   });
 
-  if (!res.ok) {
-    const errorBody = await res.text();
-    throw new Error(`Erro na API do Gemini (${res.status}): ${errorBody}`);
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `HTTP ${response.status}: Falha ao chamar a API do Gemini.`);
   }
 
-  const resJson = await res.json();
-  const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) throw new Error('A API do Gemini não retornou conteúdo.');
+  const resData = await response.json();
+  const textOutput = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!textOutput) throw new Error('A API do Gemini retornou uma resposta vazia.');
 
-  const parsed = JSON.parse(rawText);
+  let cleanJson = textOutput.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+  const parsed = JSON.parse(cleanJson);
 
-  // Define metadados do workspace
   parsed.id = 'nlm_' + Date.now();
   parsed.isNotebookLM = true;
   parsed.notebookUrl = url || '';
   if (!parsed.cor) parsed.cor = 'linear-gradient(135deg, #1E40AF, #7C3AED)';
-  if (!parsed.videoUrl) {
-    parsed.videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
-  }
-
-  // Gera os slides de apresentação 3D
+  if (!parsed.icone) parsed.icone = '🌟';
   parsed.slides = window.gerarSlidesParaWorkspace(parsed);
 
   return parsed;
 }
 
 /**
- * Extrator Profundo: Mapeia todo o material gerado em um workspace completo do Calisto
+ * Extrator Profundo: Mapeia o material em um workspace completo do Calisto
  */
 function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
   let text = rawText || '';
 
-  // Se o texto estiver vazio mas temos URL, busca se é um dos presets conhecidos
   if (!text && url) {
     const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => url.toLowerCase().includes(p.url.toLowerCase()) || url.includes('robotica') || url.includes('coral'));
     if (preset) text = preset.rawContent;
@@ -1367,7 +1606,6 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
 
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-  // 1. EXTRAÇÃO DO TÍTULO DO WORKSPACE
   let titulo = fetchedTitle;
   if (!titulo) {
     for (let l of lines) {
@@ -1383,9 +1621,8 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     const lastPart = parts[parts.length - 1] || 'NotebookLM';
     titulo = lastPart.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
-  if (!titulo) titulo = 'Estudo do NotebookLM';
+  if (!titulo) titulo = 'Estudo do Saber';
 
-  // 2. EXTRAÇÃO DO RESUMO & CONCEITOS
   let resumo = '';
   for (let l of lines) {
     if (!l.startsWith('#') && !l.startsWith('-') && !l.startsWith('*') && l.length > 30) {
@@ -1394,10 +1631,9 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     }
   }
   if (!resumo) {
-    resumo = `Apresentação interativa e sala de estudos geradas a partir do material do seu workspace de ${titulo}!`;
+    resumo = `Apresentação interativa e sala de estudos geradas a partir do material de ${titulo}!`;
   }
 
-  // 3. EXTRAÇÃO DOS TÓPICOS PRINCIPAIS
   let topicos = [];
   for (let l of lines) {
     if (l.startsWith('- ') || l.startsWith('* ') || /^\d+\.\s/.test(l)) {
@@ -1415,29 +1651,25 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     ];
   }
 
-  // 4. VÍDEO EDUCATIVO MAPEADO AUTOMATICAMENTE
   let videoUrl = '';
-  // Se houver link de youtube no texto/HTML
   const ytMatch = text.match(/(?:youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/);
   if (ytMatch && ytMatch[1]) {
     videoUrl = `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
   } else {
-    // Mapeamento inteligente de vídeos infantis educativos conforme o tema
     const lowerTitle = (titulo + ' ' + text).toLowerCase();
     if (lowerTitle.includes('robô') || lowerTitle.includes('robótica') || lowerTitle.includes('ia') || lowerTitle.includes('inteligência')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4'; // Robótica / Ciência
+      videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
     } else if (lowerTitle.includes('coral') || lowerTitle.includes('oceano') || lowerTitle.includes('mar') || lowerTitle.includes('peixe')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/n3_v08lP69Q'; // Oceanos
+      videoUrl = 'https://www.youtube-nocookie.com/embed/n3_v08lP69Q';
     } else if (lowerTitle.includes('espaço') || lowerTitle.includes('sistema solar') || lowerTitle.includes('planeta') || lowerTitle.includes('estrela')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/fD3BqA3k1tY'; // Espaço
+      videoUrl = 'https://www.youtube-nocookie.com/embed/fD3BqA3k1tY';
     } else if (lowerTitle.includes('dinossauro') || lowerTitle.includes('fóssil') || lowerTitle.includes('t-rex')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/9w_Yh8jW3n8'; // Dinossauros
+      videoUrl = 'https://www.youtube-nocookie.com/embed/9w_Yh8jW3n8';
     } else {
       videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
     }
   }
 
-  // 5. INFOGRÁFICOS VISUAIS E ESTATÍSTICAS
   const infograficos = [
     {
       titulo: `Mapa Visual: ${titulo}`,
@@ -1455,7 +1687,6 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     }
   ];
 
-  // 6. CURIOSIDADES DO TEMA
   let curiosidades = [];
   for (let l of lines) {
     if (/curiosidade|você sabia|sabia que|fato|segredo/i.test(l)) {
@@ -1469,7 +1700,6 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     ];
   }
 
-  // 7. FLASHCARDS (GLOSSÁRIO & PERGUNTAS)
   let flashcards = [];
   for (let l of lines) {
     if (l.includes('|')) {
@@ -1495,7 +1725,6 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     ];
   }
 
-  // 8. TESTES & QUIZZES DE FIXAÇÃO
   let quiz = [];
   let currentQ = null;
   for (let l of lines) {
@@ -1529,29 +1758,17 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
         ],
         respostaCorreta: 0,
         explicacao: `Isso mesmo! O sábio Calisto explicou tudo com perfeição!`
-      },
-      {
-        pergunta: `Por que é divertido estudar ${titulo} com o Calisto?`,
-        opcoes: [
-          'Porque ele é sábio, falante e adora ensinar os mistérios da ciência!',
-          'Porque ele fica dormindo',
-          'Porque não tem quizzes',
-          'Nenhuma das anteriores'
-        ],
-        respostaCorreta: 0,
-        explicacao: `Hehehe! Acertou em cheio! O Calisto tem mais de cem anos de penas de pura sabedoria!`
       }
     ];
   }
 
-  // Objeto Workspace Completo
   const novoWorkspace = {
     id: 'nlm_' + Date.now(),
     isNotebookLM: true,
     notebookUrl: url || '',
     titulo: titulo,
     icone: '🌟',
-    subtitulo: `Material importado do workspace: ${url ? url.substring(0, 40) : 'NotebookLM'}`,
+    subtitulo: `Material de estudo: ${url ? url.substring(0, 40) : 'Especial'}`,
     cor: 'linear-gradient(135deg, #1E40AF, #7C3AED)',
     videoUrl: videoUrl,
     resumo: resumo,
@@ -1562,195 +1779,8 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     quiz: quiz
   };
 
-  // Gera os slides de apresentação ricos
   novoWorkspace.slides = window.gerarSlidesParaWorkspace(novoWorkspace);
-
   return novoWorkspace;
-}
-
-// ====================================================================
-// CONTROLE DE ABAS DA SALA DE ESTUDOS
-// ====================================================================
-function ativarAba(tabId) {
-  sounds.playPop();
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabId);
-  });
-  document.querySelectorAll('.tab-pane').forEach(pane => {
-    pane.classList.toggle('active', pane.id === tabId);
-  });
-
-  const speech = document.getElementById('paco-study-speech');
-  const nome = AppState.childName || 'explorador';
-
-  if (tabId === 'tab-video') {
-    speech.textContent = `Assista ao vídeo explicativo com atenção, ${nome}, para aprender todos os segredos!`;
-  } else if (tabId === 'tab-infographics') {
-    speech.textContent = `Veja só este infográfico, ${nome}! Cada cartão explica uma ideia mágica passo a passo!`;
-  } else if (tabId === 'tab-flashcards') {
-    speech.textContent = `Toque no cartão para girar e ver a resposta mágica, ${nome}!`;
-  } else if (tabId === 'tab-quiz') {
-    speech.textContent = `Hora do desafio, ${nome}! Quero ver se sua memória é tão boa quanto o meu bico afiado!`;
-  } else if (tabId === 'tab-curiosities') {
-    speech.textContent = `Descubra curiosidades incríveis que pouca gente sabe, ${nome}!`;
-  }
-}
-
-// ====================================================================
-// FLASHCARDS 3D
-// ====================================================================
-function carregarFlashcardAtual() {
-  const ws = AppState.currentWorkspace;
-  if (!ws || !ws.flashcards || ws.flashcards.length === 0) return;
-
-  const card = ws.flashcards[AppState.currentFlashcardIdx];
-  const inner = document.getElementById('flashcard-inner');
-  inner.classList.remove('flipped');
-
-  document.getElementById('fc-question').textContent = card.pergunta;
-  document.getElementById('fc-answer').textContent = card.resposta;
-  document.getElementById('fc-counter').textContent = `${AppState.currentFlashcardIdx + 1} / ${ws.flashcards.length}`;
-}
-
-function virarFlashcard() {
-  sounds.playPop();
-  document.getElementById('flashcard-inner').classList.toggle('flipped');
-}
-
-function proximoFlashcard() {
-  const ws = AppState.currentWorkspace;
-  if (!ws) return;
-  sounds.playPop();
-  AppState.currentFlashcardIdx = (AppState.currentFlashcardIdx + 1) % ws.flashcards.length;
-  carregarFlashcardAtual();
-}
-
-function anteriorFlashcard() {
-  const ws = AppState.currentWorkspace;
-  if (!ws) return;
-  sounds.playPop();
-  AppState.currentFlashcardIdx = (AppState.currentFlashcardIdx - 1 + ws.flashcards.length) % ws.flashcards.length;
-  carregarFlashcardAtual();
-}
-
-// ====================================================================
-// QUIZ GAMIFICADO
-// ====================================================================
-function carregarQuizAtual() {
-  const ws = AppState.currentWorkspace;
-  if (!ws || !ws.quiz || ws.quiz.length === 0) return;
-
-  AppState.quizAnswerLocked = false;
-  const q = ws.quiz[AppState.currentQuizIdx];
-  const total = ws.quiz.length;
-
-  document.getElementById('quiz-status-indicator').textContent = `Pergunta ${AppState.currentQuizIdx + 1} de ${total}`;
-  
-  let livesStr = '';
-  for (let i = 0; i < AppState.quizLives; i++) livesStr += '❤️';
-  if (AppState.quizLives === 0) livesStr = '💔 Sem vidas';
-  document.getElementById('quiz-lives-icons').textContent = livesStr;
-
-  document.getElementById('quiz-question-text').textContent = q.pergunta;
-  
-  const fbBox = document.getElementById('quiz-feedback-box');
-  fbBox.className = 'quiz-feedback-box';
-  
-  const optsContainer = document.getElementById('quiz-options-container');
-  optsContainer.innerHTML = '';
-  const letters = ['A', 'B', 'C', 'D'];
-
-  q.opcoes.forEach((opcao, idx) => {
-    const btn = document.createElement('button');
-    btn.className = 'quiz-option-btn';
-    btn.innerHTML = `
-      <span class="quiz-option-letter">${letters[idx] || (idx + 1)}</span>
-      <span>${opcao}</span>
-    `;
-    btn.addEventListener('click', () => verificarRespostaQuiz(idx, btn));
-    optsContainer.appendChild(btn);
-  });
-}
-
-function verificarRespostaQuiz(selectedIdx, btnElement) {
-  if (AppState.quizAnswerLocked) return;
-  AppState.quizAnswerLocked = true;
-
-  const ws = AppState.currentWorkspace;
-  const q = ws.quiz[AppState.currentQuizIdx];
-  const correctIdx = q.respostaCorreta;
-  const isCorrect = (selectedIdx === correctIdx);
-  const nome = AppState.childName || 'campeão';
-
-  const fbBox = document.getElementById('quiz-feedback-box');
-  const fbMsg = document.getElementById('quiz-feedback-msg');
-  const fbExp = document.getElementById('quiz-feedback-explanation');
-  const pacoSpeech = document.getElementById('paco-study-speech');
-
-  if (isCorrect) {
-    sounds.playCorrect();
-    confetti.burst(50);
-    if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
-
-    btnElement.classList.add('correct');
-    fbBox.className = 'quiz-feedback-box show correct-fb';
-    fbMsg.innerHTML = `🎉 Resposta Certa! O Calisto adorou, ${nome}! ⭐`;
-    fbExp.textContent = q.explicacao || 'Muito bem pensado!';
-    pacoSpeech.textContent = `Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || 'Você é um gênio!'}`;
-    falarTexto(`Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || ''}`);
-  } else {
-    sounds.playWrong();
-    if (window.setParrotMoodAll) window.setParrotMoodAll('angry');
-
-    btnElement.classList.add('wrong');
-    AppState.quizLives = Math.max(0, AppState.quizLives - 1);
-    
-    const allBtns = document.querySelectorAll('.quiz-option-btn');
-    if (allBtns[correctIdx]) allBtns[correctIdx].classList.add('correct');
-
-    fbBox.className = 'quiz-feedback-box show wrong-fb';
-    fbMsg.innerHTML = `Ai minhas penas, ${nome}! Olha a explicação do Calisto:`;
-    fbExp.textContent = q.explicacao || 'Preste atenção na dica do Calisto!';
-    pacoSpeech.textContent = `Ai minhas peninhas velhas, ${nome}! A resposta certa é a verde. Olha aqui: ${q.explicacao || ''}`;
-    falarTexto(`Ai minhas peninhas velhas, ${nome}! A resposta certa era outra! Olha a dica do Calisto!`);
-  }
-
-  let livesStr = '';
-  for (let i = 0; i < AppState.quizLives; i++) livesStr += '❤️';
-  if (AppState.quizLives === 0) livesStr = '💔 Tente novamente!';
-  document.getElementById('quiz-lives-icons').textContent = livesStr;
-}
-
-function avancarQuiz() {
-  sounds.playPop();
-  const ws = AppState.currentWorkspace;
-  if (!ws) return;
-
-  AppState.currentQuizIdx++;
-  if (AppState.currentQuizIdx < ws.quiz.length) {
-    carregarQuizAtual();
-  } else {
-    concluirWorkspace();
-  }
-}
-
-function concluirWorkspace() {
-  const ws = AppState.currentWorkspace;
-  const nome = AppState.childName || 'Pequeno Explorador';
-  sounds.playFanfare();
-  confetti.burst(140);
-  if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
-
-  AppState.stars += 3;
-  if (!AppState.completedWorkspaces.includes(ws.id)) {
-    AppState.completedWorkspaces.push(ws.id);
-    AppState.trophies += 1;
-  }
-  atualizarEstatisticas();
-
-  document.getElementById('cert-child-name').value = nome;
-  document.getElementById('victory-modal').classList.add('open');
-  falarTexto(`Hehehe! Vitória, ${nome}! Pelos meus cem anos de penas, nunca vi aluno tão dedicado! Parabéns!`);
 }
 
 function salvarDadosEducador() {
@@ -1772,12 +1802,8 @@ function salvarDadosEducador() {
   }
 }
 
-// Expõe métodos essenciais no escopo global para formulários
-window.validarPinEducador = validarPinEducador;
-window.salvarNovoPinEducador = salvarNovoPinEducador;
-
 // ====================================================================
-// INICIALIZAÇÃO DOS EVENTOS & 3D (COM TRATAMENTO DE ERROS ROBUSTO)
+// INICIALIZAÇÃO DE EVENTOS & TECLADO DO PIN
 // ====================================================================
 function safeBind(idOrElement, eventName, handler) {
   const el = (typeof idOrElement === 'string') ? document.getElementById(idOrElement) : idOrElement;
@@ -1798,7 +1824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(window.initParrot3D, 150);
   }
 
-  // Navegação e Hub
+  // Navegação
   safeBind('btn-home', 'click', () => {
     sounds.playPop();
     fecharWorkspace();
@@ -1814,23 +1840,19 @@ document.addEventListener('DOMContentLoaded', () => {
     fecharWorkspace();
   });
 
-  // Botão de Som / Voz
-  const toggleSoundHandler = () => {
+  // Som / Voz
+  safeBind('btn-toggle-sound', 'click', () => {
     AppState.soundEnabled = !AppState.soundEnabled;
-    const btns = [document.getElementById('btn-toggle-sound'), document.getElementById('btn-sound-toggle')];
-    btns.forEach(b => {
-      if (b) b.textContent = AppState.soundEnabled ? '🔊' : '🔇';
-    });
+    const btn = document.getElementById('btn-toggle-sound');
+    if (btn) btn.textContent = AppState.soundEnabled ? '🔊' : '🔇';
     sounds.playPop();
     if (!AppState.soundEnabled && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(false);
     }
-  };
-  safeBind('btn-toggle-sound', 'click', toggleSoundHandler);
-  safeBind('btn-sound-toggle', 'click', toggleSoundHandler);
+  });
 
-  // Botões de Fala do Calisto (Hero & Sala de Estudos)
+  // Fala do Calisto
   safeBind('btn-speak-greeting', 'click', () => {
     const el = document.getElementById('hub-greeting-text');
     if (el) falarTexto(el.textContent);
@@ -1841,24 +1863,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) falarTexto(el.textContent);
   });
 
-  // Mexer / Provocar Calisto
+  // Cócegas no Calisto
   safeBind('btn-tease-paco', 'click', () => {
+    sounds.playRingneckRealChirp();
     if (window.parrot3DInstances && window.parrot3DInstances.hero) {
       window.parrot3DInstances.hero.provocar();
     }
   });
 
   // Chamar Calisto Voador
-  const summonHandler = () => {
+  safeBind('btn-summon-calisto', 'click', () => {
     sounds.playRingneckRealChirp();
     if (window.calistoWanderer) {
-      window.calistoWanderer.flyTo(window.innerWidth / 2 - 75, 110);
+      window.calistoWanderer.flyTo(window.innerWidth / 2 - 70, 110);
     }
-  };
-  safeBind('btn-summon-calisto', 'click', summonHandler);
-  safeBind('btn-call-calisto', 'click', summonHandler);
+  });
 
-  // Abas da Sala de Estudos
+  // Abas de Estudo
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => ativarAba(btn.dataset.tab));
   });
@@ -1873,14 +1894,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Vitória
   safeBind('btn-close-victory', 'click', () => {
-    document.getElementById('victory-modal').classList.remove('open');
+    document.getElementById('victory-modal')?.classList.remove('open');
   });
   safeBind('btn-claim-victory', 'click', () => {
-    document.getElementById('victory-modal').classList.remove('open');
+    document.getElementById('victory-modal')?.classList.remove('open');
     fecharWorkspace();
   });
 
-  // Central do Educador & Autenticação PIN
+  // Central do Educador & PIN
   safeBind('btn-open-educator', 'click', abrirModalEducador);
   safeBind('btn-close-pin-modal', 'click', fecharModalPin);
   safeBind('btn-cancel-pin', 'click', fecharModalPin);
@@ -1889,7 +1910,35 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-reset-defaults-ed', 'click', restaurarPadroesEducador);
   safeBind('btn-save-json', 'click', salvarDadosEducador);
 
-  // Botão "➕ Incluir Novo Workspace" (vai para a aba de importação)
+  // Teclado Numérico Visual para o PIN (Touch/Tablets)
+  document.querySelectorAll('.pin-key[data-num]').forEach(k => {
+    k.addEventListener('click', () => {
+      sounds.playPop();
+      const pinInput = document.getElementById('input-educator-pin');
+      if (pinInput && pinInput.value.length < 6) {
+        pinInput.value += k.dataset.num;
+        if (pinInput.value.length === 4) {
+          validarPinEducador();
+        }
+      }
+    });
+  });
+
+  safeBind('btn-pin-clear', 'click', () => {
+    sounds.playPop();
+    const pinInput = document.getElementById('input-educator-pin');
+    if (pinInput) pinInput.value = '';
+  });
+
+  safeBind('btn-pin-backspace', 'click', () => {
+    sounds.playPop();
+    const pinInput = document.getElementById('input-educator-pin');
+    if (pinInput && pinInput.value.length > 0) {
+      pinInput.value = pinInput.value.slice(0, -1);
+    }
+  });
+
+  // Botão "➕ Incluir Novo Workspace"
   safeBind('btn-ed-goto-import', 'click', () => {
     document.querySelectorAll('.educator-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.ed-tab-content').forEach(c => c.style.display = 'none');
@@ -1899,10 +1948,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (importView) importView.style.display = 'block';
   });
 
-  // Gestão da Chave Gemini
+  // Chave Gemini
   safeBind('btn-save-gemini-key', 'click', salvarChaveGemini);
 
-  // Importador no Modo Educador
+  // Colar / Presets
   safeBind('btn-ed-paste-url', 'click', async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -1923,7 +1972,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('ed-notebooklm-file-input', 'change', carregarArquivoEducador);
   safeBind('btn-ed-generate-workspace', 'click', processarGeracaoEducador);
 
-  // Modo Apresentação do Calisto
+  // Apresentação 3D
   safeBind('btn-pres-back', 'click', fecharApresentacao);
   safeBind('btn-pres-prev', 'click', anteriorSlide);
   safeBind('btn-pres-next', 'click', proximoSlide);
@@ -1937,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (AppState.currentWorkspace) abrirApresentacao(AppState.currentWorkspace);
   });
 
-  // Controle por teclado (Setas e Barra de Espaço) na Apresentação
+  // Teclado na Apresentação
   window.addEventListener('keydown', (e) => {
     const presView = document.getElementById('presentation-view');
     if (presView && presView.classList.contains('active')) {
@@ -1953,7 +2002,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Abas do Painel do Educador
+  // Abas do Educador
   document.querySelectorAll('.educator-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.educator-tab-btn').forEach(b => b.classList.remove('active'));

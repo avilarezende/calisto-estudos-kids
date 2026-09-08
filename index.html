@@ -2,9 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aventura do Saber com o Calisto 🦜 | Estudo Divertido e Interativo</title>
-  <meta name="description" content="Portal infantil gamificado de estudos guiado pelo sábio Calisto, com vídeos, flashcards e quiz.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Aventura do Saber com o Calisto 🦜 | Portal de Estudos Infantil</title>
+  <meta name="description" content="Portal educativo infantil guiado pelo sábio Calisto com apresentações 3D interativas, vídeos, infográficos, flashcards e quiz.">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="assets/mascot.jpg" type="image/jpeg">
   <!-- Three.js para renderização do Mascote Calisto 3D -->
@@ -12,139 +12,151 @@
 </head>
 <body>
 
-  <!-- Decorações de fundo -->
+  <!-- Decorações de fundo com bolhas flutuantes -->
   <div class="bg-decorations" aria-hidden="true">
     <div class="bubble bubble-1"></div>
     <div class="bubble bubble-2"></div>
     <div class="bubble bubble-3"></div>
   </div>
 
-  <!-- Canvas para Chuva de Confetes -->
+  <!-- Canvas para Chuva de Confetes de Vitória -->
   <canvas id="confetti-canvas"></canvas>
 
-  <!-- ===================================================================
-       CALISTO ANDARILHO / VOADOR FLUTUANTE PELA PÁGINA
-       =================================================================== -->
+  <!-- Mascote Calisto Voador e Flutuante (interativo na página) -->
   <div id="calisto-wanderer-container" class="calisto-wanderer-wrap" title="Dê dois cliques em qualquer lugar da tela para chamar o Calisto!">
     <div id="calisto-wanderer-speech" class="calisto-wanderer-speech">Hehehe! Estou de olho!</div>
     <div id="calisto-wanderer-3d" class="calisto-wanderer-canvas"></div>
   </div>
 
+  <!-- CONTAINER PRINCIPAL DO APLICATIVO -->
   <div class="app-container">
 
-    <!-- BARRA SUPERIOR / CABEÇALHO -->
-    <header class="main-header">
-      <div class="brand" id="btn-home" title="Voltar para a página inicial">
-        <img src="assets/mascot.jpg" alt="Calisto" class="brand-avatar">
-        <div class="brand-title">Aventura do <span>Saber</span> 🦜</div>
-      </div>
-
-      <!-- Perfil da Criança & Gamificação -->
-      <div class="header-stats">
-        <div class="stat-pill user-name-pill" id="btn-edit-name" title="Clique para trocar o seu nome!">
-          <span>👤</span>
-          <span id="header-child-name">Explorador</span>
-          <span style="font-size: 0.75rem; opacity: 0.7;">✏️</span>
-        </div>
-        <div class="stat-pill" title="Estrelas conquistadas">
-          <span>⭐</span>
-          <span id="user-stars">0</span>
-        </div>
-        <div class="stat-pill trophies" title="Missões completadas">
-          <span>🏆</span>
-          <span id="user-trophies">0</span>
+    <!-- ===================================================================
+         BARRA SUPERIOR / CABEÇALHO (RESPONSIVA & ACESSÍVEL)
+         =================================================================== -->
+    <header class="main-header" role="banner">
+      <!-- Marca do Portal -->
+      <div class="brand" id="btn-home" role="button" tabindex="0" title="Voltar para a página inicial">
+        <img src="assets/mascot.jpg" alt="Foto do Calisto" class="brand-avatar">
+        <div class="brand-text-group">
+          <span class="brand-title">Aventura do <span>Saber</span></span>
+          <span class="brand-subtitle">com o Calisto 🦜</span>
         </div>
       </div>
 
-      <!-- Ações: Chamar Calisto, Som & Central do Educador Protegida -->
-      <div class="header-actions">
-        <button id="btn-summon-calisto" class="icon-action-btn" title="Chamar o Calisto para cá!">
-          🦜 Chamar Calisto
+      <!-- Placar de Gamificação da Criança -->
+      <div class="header-stats" aria-label="Estatísticas do Aluno">
+        <button type="button" class="stat-pill user-name-pill" id="btn-edit-name" title="Toque para mudar o seu nome de explorador!">
+          <span class="pill-icon">👤</span>
+          <span id="header-child-name" class="pill-value">Explorador</span>
+          <span class="pill-edit-icon" aria-hidden="true">✏️</span>
         </button>
-        <button id="btn-toggle-sound" class="icon-action-btn" title="Ativar ou desativar som">
+        <div class="stat-pill stars-pill" title="Estrelas conquistadas">
+          <span class="pill-icon">⭐</span>
+          <span id="user-stars" class="pill-value">0</span>
+        </div>
+        <div class="stat-pill trophies-pill" title="Troféus de missões concluídas">
+          <span class="pill-icon">🏆</span>
+          <span id="user-trophies" class="pill-value">0</span>
+        </div>
+      </div>
+
+      <!-- Ações de Apoio & Acesso do Educador Protegido por Senha -->
+      <div class="header-actions">
+        <button type="button" id="btn-summon-calisto" class="btn-bubble-action" title="Chamar o Calisto para voar até você!">
+          🦜 <span class="btn-text-hide-mobile">Chamar Calisto</span>
+        </button>
+        <button type="button" id="btn-toggle-sound" class="btn-bubble-action icon-only" title="Ativar ou desativar a voz e sons" aria-label="Controle de som">
           🔊
         </button>
-        <button id="btn-open-educator" class="icon-action-btn educator-btn" title="Central do Educador (Acesso com Senha)">
-          🔒 Central do Educador
+        <button type="button" id="btn-open-educator" class="btn-educator-lock" title="Central do Educador (Área protegida por senha para professores e pais)">
+          🔒 <span class="educator-label">Educador</span>
         </button>
       </div>
     </header>
 
-    <!-- TELA 1: HUB DE SELEÇÃO DOS WORKSPACES -->
+    <!-- ===================================================================
+         TELA 1: PÁGINA PRINCIPAL INFANTIL (HUB DE MUNDOS DE ESTUDO)
+         100% LIMPA, SEM BOTÕES TÉCNICOS OU DE IMPORTAÇÃO
+         =================================================================== -->
     <main id="hub-view">
-      <!-- Banner de Boas-Vindas com o Calisto -->
-      <section class="mascot-hero-card">
+      <!-- Banner Hero com Mascote Calisto 3D e Fala Acolhedora -->
+      <section class="mascot-hero-card" aria-label="Apresentação do Mascote">
         <div class="mascot-hero-avatar-wrap">
-          <div id="paco-hero-3d" class="paco-3d-canvas-box" title="Calisto"></div>
-          <div class="paco-3d-hint">👆 Calisto</div>
+          <div id="paco-hero-3d" class="paco-3d-canvas-box" title="Toque no Calisto para vê-lo se mexer!"></div>
+          <div class="paco-3d-hint">👆 Toque no Calisto!</div>
         </div>
         <div class="mascot-hero-content">
-          <h1>Olá, <span id="hero-child-name" class="highlight">Pequeno Explorador</span>! 👋</h1>
+          <div class="hero-welcome-badge">🌟 Portal de Estudos Infantis</div>
+          <h1 class="hero-heading">Olá, <span id="hero-child-name" class="highlight">Pequeno Explorador</span>! 👋</h1>
           <div class="speech-bubble" id="hub-greeting-text">
-            Hehehe! Eu sou o sábio <strong>Calisto</strong>! Escolha um dos mundos mágicos abaixo para assistir à apresentação 3D, girar flashcards, aprender com infográficos e vencer o grande quiz! 🌟
+            Hehehe! Eu sou o sábio <strong>Calisto</strong>! Escolha um dos mundos mágicos abaixo para assistir à apresentação 3D, girar cartões, aprender com infográficos e vencer o grande quiz! 🌟
           </div>
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <button id="btn-speak-greeting" class="speak-btn">
+          <div class="hero-btn-row">
+            <button type="button" id="btn-speak-greeting" class="cta-primary-btn">
               🔊 Ouvir o Calisto Falar
             </button>
-            <button id="btn-tease-paco" class="speak-btn" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
-              😡 Mexer com o Calisto!
+            <button type="button" id="btn-tease-paco" class="cta-playful-btn" title="Fazer cócegas no Calisto!">
+              😄 Fazer Cócegas no Calisto!
             </button>
           </div>
         </div>
       </section>
 
-      <!-- Grade dos Workspaces -->
-      <section>
+      <!-- Grade dos Mundos de Aventura e Estudo -->
+      <section class="workspaces-section" aria-label="Mundos de Estudo Disponíveis">
         <div class="section-heading">
-          <h2>🗺️ Escolha o seu Workspace de Estudo & Apresentação</h2>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-            <span class="section-tag" id="workspace-count-tag">10 Temas Disponíveis</span>
+          <div class="section-title-wrap">
+            <h2>🗺️ Escolha seu Mundo de Aventuras</h2>
+            <p class="section-subtitle">Toque em qualquer tema para começar sua viagem de descobertas!</p>
           </div>
+          <span class="section-count-badge" id="workspace-count-tag">10 Mundos Mágicos</span>
         </div>
 
         <div class="workspaces-grid" id="workspaces-grid-container">
-          <!-- Os cartões são gerados dinamicamente pelo JavaScript -->
+          <!-- Os cartões de estudo são renderizados dinamicamente pelo JavaScript -->
         </div>
       </section>
     </main>
 
-    <!-- TELA 2: MODO APRESENTAÇÃO DO CALISTO 3D (NOVA EXPERIÊNCIA DE CONSUMO) -->
-    <section id="presentation-view" class="presentation-stage-container">
+    <!-- ===================================================================
+         TELA 2: MODO APRESENTAÇÃO DO CALISTO 3D (SLIDES INTERATIVOS)
+         =================================================================== -->
+    <section id="presentation-view" class="presentation-stage-container" aria-label="Palco de Apresentação">
       <div class="presentation-header">
-        <button id="btn-pres-back" class="back-btn">
-          ⬅️ Voltar aos Temas
+        <button type="button" id="btn-pres-back" class="nav-back-btn">
+          ⬅️ Voltar aos Mundos
         </button>
         <div class="presentation-title-info">
           <span class="pres-badge" id="pres-source-badge">🦜 Apresentação do Calisto</span>
           <h2 id="pres-workspace-title">Título da Apresentação</h2>
         </div>
         <div class="presentation-top-actions">
-          <button id="btn-pres-autoplay" class="pres-control-btn" title="Reprodução automática com voz">
+          <button type="button" id="btn-pres-autoplay" class="pres-action-btn" title="Passar slides automaticamente com voz">
             ▶️ Auto-Play
           </button>
-          <button id="btn-pres-speak" class="pres-control-btn" title="Ouvir a narração do Calisto">
+          <button type="button" id="btn-pres-speak" class="pres-action-btn voice" title="Ouvir a narração deste slide">
             🔊 Narrar Slide
           </button>
-          <button id="btn-pres-to-study" class="pres-control-btn highlight-btn" title="Ir para a Sala de Estudos com Quiz">
-            📚 Sala de Estudos & Quiz
+          <button type="button" id="btn-pres-to-study" class="pres-action-btn primary" title="Ir para a Sala de Estudos com Quiz">
+            📚 Sala de Estudos & Quiz ➡️
           </button>
         </div>
       </div>
 
       <!-- Palco Widescreen de Apresentação -->
       <div class="presentation-stage" id="presentation-stage-box">
-        <!-- Mascote 3D Orador no Palco -->
+        <!-- Mascote 3D Orador no Pódio -->
         <div class="presentation-mascot-podium">
-          <div id="calisto-presentation-3d" class="calisto-presenter-canvas-box"></div>
+          <div id="calisto-presentation-3d" class="calisto-presenter-canvas-box" title="Calisto Orador"></div>
           <div class="presenter-tag">
-            <span class="sound-wave-dot"></span>
+            <span class="sound-wave-dot" aria-hidden="true"></span>
             <strong>Calisto Apresentador</strong>
           </div>
         </div>
 
         <!-- Slide Atual -->
-        <div class="presentation-slide-card" id="presentation-slide-card">
+        <article class="presentation-slide-card" id="presentation-slide-card">
           <div class="slide-header-meta">
             <span class="slide-index-pill" id="pres-slide-pill">Slide 1 de 6 ⭐</span>
             <span class="slide-type-pill" id="pres-slide-type">🌟 Introdução</span>
@@ -155,41 +167,39 @@
               <span class="slide-big-icon" id="pres-slide-icon">🚀</span>
               <div>
                 <h3 class="slide-title" id="pres-slide-title">Título do Slide</h3>
-                <p class="slide-subtitle" id="pres-slide-sub">Subtítulo explicativo do slide</p>
+                <p class="slide-subtitle" id="pres-slide-sub">Subtítulo explicativo</p>
               </div>
             </div>
 
-            <!-- Caixa de Destaque / Resumo do Slide -->
+            <!-- Caixa de Destaque -->
             <div class="slide-highlight-card" id="pres-slide-highlight-card">
               <p id="pres-slide-highlight-text">Destaque do slide aqui...</p>
             </div>
 
-            <!-- Tópicos ou Conteúdo Específico do Slide -->
+            <!-- Tópicos do Slide -->
             <div class="slide-dynamic-body" id="pres-slide-dynamic-body">
               <ul class="slide-bullets-list" id="pres-slide-bullets">
-                <!-- Tópicos inseridos via JavaScript -->
+                <!-- Inserido dinamicamente via JS -->
               </ul>
             </div>
 
-            <!-- Infográfico Interativo no Slide (Opcional) -->
+            <!-- Infográfico no Slide (Opcional) -->
             <div class="slide-infographic-box" id="pres-slide-infographic-box" style="display: none;">
-              <div class="infographic-container" id="pres-infographic-content">
-                <!-- Gerado dinamicamente -->
-              </div>
+              <div class="infographic-container" id="pres-infographic-content"></div>
             </div>
 
-            <!-- Caixa de Desafio / Flashcard Interativo no Slide (Opcional) -->
+            <!-- Desafio / Pergunta Rápida no Slide -->
             <div class="slide-interactive-box" id="pres-slide-interactive-box" style="display: none;">
               <div class="interactive-question" id="pres-interactive-q">Pergunta do desafio?</div>
-              <button id="btn-pres-reveal-answer" class="reveal-btn">💡 Revelar Resposta do Calisto</button>
+              <button type="button" id="btn-pres-reveal-answer" class="reveal-btn">💡 Revelar Resposta do Calisto</button>
               <div class="interactive-answer" id="pres-interactive-a" style="display: none;">Resposta mágica!</div>
             </div>
 
-            <!-- Player de Áudio do NotebookLM (Opcional no Slide de Áudio) -->
+            <!-- Player de Áudio do NotebookLM (Opcional) -->
             <div class="slide-audio-box" id="pres-slide-audio-box" style="display: none;">
               <div class="audio-box-info">
                 <span>🎙️ <strong>Áudio Overview do NotebookLM</strong></span>
-                <p style="font-size: 0.9rem; color: #475569; margin-top: 0.25rem;">Ouça a conversa gerada pelo NotebookLM ou clique no botão de voz do Calisto!</p>
+                <p style="font-size: 0.9rem; color: #475569; margin-top: 0.25rem;">Ouça a conversa gerada pelo NotebookLM!</p>
               </div>
               <audio id="pres-audio-player" controls style="width: 100%; margin-top: 0.5rem;"></audio>
             </div>
@@ -205,31 +215,28 @@
               Hehehe! Prestem bastante atenção neste ponto, pequenos cientistas!
             </div>
           </div>
-        </div>
+        </article>
       </div>
 
-      <!-- Barra de Controle de Navegação dos Slides -->
-      <div class="presentation-bottom-nav">
-        <button id="btn-pres-prev" class="pres-nav-btn">
+      <!-- Barra de Navegação dos Slides -->
+      <nav class="presentation-bottom-nav" aria-label="Navegação de Slides">
+        <button type="button" id="btn-pres-prev" class="pres-nav-btn">
           ⬅️ Slide Anterior
         </button>
-        
-        <!-- Indicadores de Slides (Bolinhas interativas) -->
-        <div class="pres-dots-wrapper" id="pres-dots-container">
-          <!-- Gerados dinamicamente -->
-        </div>
-
-        <button id="btn-pres-next" class="pres-nav-btn primary">
+        <div class="pres-dots-wrapper" id="pres-dots-container"></div>
+        <button type="button" id="btn-pres-next" class="pres-nav-btn primary">
           Próximo Slide ➡️
         </button>
-      </div>
+      </nav>
     </section>
 
-    <!-- TELA 3: SALA DE ESTUDOS DO WORKSPACE (VÍDEO/ÁUDIO, FLASHCARDS, INFOGRÁFICOS & QUIZ) -->
-    <section id="study-view" class="study-room">
+    <!-- ===================================================================
+         TELA 3: SALA DE ESTUDOS DO WORKSPACE (VÍDEO, INFOGRÁFICO, FLASHCARDS & QUIZ)
+         =================================================================== -->
+    <section id="study-view" class="study-room" aria-label="Sala de Estudos e Atividades">
       <div class="study-header">
-        <button id="btn-back-hub" class="back-btn">
-          ⬅️ Voltar aos Temas
+        <button type="button" id="btn-back-hub" class="nav-back-btn">
+          ⬅️ Voltar aos Mundos
         </button>
         <div class="study-title-group">
           <span class="study-icon" id="current-workspace-icon">🚀</span>
@@ -238,45 +245,41 @@
             <p id="current-workspace-sub" style="color: #64748B; font-size: 0.95rem;">Subtítulo explicativo</p>
           </div>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button id="btn-switch-to-presentation" class="icon-action-btn highlight-btn" title="Assistir como Apresentação de Slides">
+        <div class="study-header-actions">
+          <button type="button" id="btn-switch-to-presentation" class="pres-action-btn primary" title="Assistir como Apresentação de Slides 3D">
             🎬 Ver Apresentação 3D
           </button>
-          <div class="stat-pill" style="background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
-            <span>🎯</span> <span id="study-progress-tag">Módulo Ativo</span>
-          </div>
         </div>
       </div>
 
-      <!-- Layout Principal da Atividade -->
+      <!-- Layout Principal das Atividades -->
       <div class="study-layout">
         <div class="study-main-panel">
-          <!-- Abas de Atividades -->
-          <nav class="study-tabs">
-            <button class="tab-btn active" data-tab="tab-video" id="tab-btn-video">
+          <!-- Abas das Atividades Pedagógicas -->
+          <nav class="study-tabs" aria-label="Abas de Atividades">
+            <button type="button" class="tab-btn active" data-tab="tab-video" id="tab-btn-video">
               📺 Cinema & Conteúdo
             </button>
-            <button class="tab-btn" data-tab="tab-infographics" id="tab-btn-infographics">
+            <button type="button" class="tab-btn" data-tab="tab-infographics" id="tab-btn-infographics">
               📊 Infográficos
             </button>
-            <button class="tab-btn" data-tab="tab-flashcards" id="tab-btn-flashcards">
+            <button type="button" class="tab-btn" data-tab="tab-flashcards" id="tab-btn-flashcards">
               🃏 Cartões Mágicos
             </button>
-            <button class="tab-btn" data-tab="tab-quiz" id="tab-btn-quiz">
+            <button type="button" class="tab-btn" data-tab="tab-quiz" id="tab-btn-quiz">
               🏆 Missão Desafio
             </button>
-            <button class="tab-btn" data-tab="tab-curiosities" id="tab-btn-curiosities">
-              💡 Curiosidades & Notas
+            <button type="button" class="tab-btn" data-tab="tab-curiosities" id="tab-btn-curiosities">
+              💡 Curiosidades
             </button>
           </nav>
 
-          <!-- ABA 1: VÍDEO / ÁUDIO EXPLICATIVO & RESUMO -->
+          <!-- ABA 1: VÍDEO EXPLICATIVO & RESUMO -->
           <div class="tab-pane active" id="tab-video">
             <div class="video-container" id="study-video-wrapper">
-              <iframe id="study-video-frame" src="" title="Vídeo Explicativo do Conteúdo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+              <iframe id="study-video-frame" src="" title="Vídeo Explicativo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
             
-            <!-- Player de Áudio Alternativo (quando não houver vídeo) -->
             <div id="study-audio-overview-card" class="summary-card" style="display: none; background: #F0FDF4; border-color: #BBF7D0; margin-bottom: 1.5rem;">
               <h3 style="color: #166534;">🎙️ Áudio Overview do NotebookLM:</h3>
               <p style="color: #374151; margin-bottom: 0.75rem;">Ouça a explicação em áudio gerada diretamente no seu projeto do NotebookLM!</p>
@@ -285,24 +288,20 @@
 
             <div class="summary-card">
               <h3>📖 O que vamos aprender:</h3>
-              <p id="study-summary-text" style="font-size: 1.1rem; margin-bottom: 1rem; color: #334155; font-weight: 600;"></p>
-              <ul class="topics-list" id="study-topics-list">
-                <!-- Tópicos inseridos via JavaScript -->
-              </ul>
+              <p id="study-summary-text" style="font-size: 1.1rem; margin-bottom: 1rem; color: #334155; font-weight: 700;"></p>
+              <ul class="topics-list" id="study-topics-list"></ul>
             </div>
           </div>
 
           <!-- ABA 2: INFOGRÁFICOS INTERATIVOS -->
           <div class="tab-pane" id="tab-infographics">
             <div class="summary-card" style="background: #F0FDF4; border-color: #BBF7D0;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                 <h3 style="color: #166534; margin: 0;">📊 Infográfico do Conhecimento:</h3>
-                <span class="pres-badge" style="background: #DCFCE7; color: #15803D;">Esquema Visual</span>
+                <span class="pres-badge" style="background: #DCFCE7; color: #15803D;">Esquema Visual Passo a Passo</span>
               </div>
               <p id="infographic-intro-text" style="color: #334155; font-weight: 600; font-size: 1.05rem; margin-bottom: 1.25rem;"></p>
-              <div class="infographics-grid" id="study-infographics-container">
-                <!-- Infográficos inseridos via JavaScript -->
-              </div>
+              <div class="infographics-grid" id="study-infographics-container"></div>
             </div>
           </div>
 
@@ -326,9 +325,9 @@
 
               <!-- Controles dos Flashcards -->
               <div class="flashcard-controls">
-                <button id="fc-prev-btn" class="flash-nav-btn">⬅️ Anterior</button>
+                <button type="button" id="fc-prev-btn" class="flash-nav-btn">⬅️ Anterior</button>
                 <span class="flashcard-indicator" id="fc-counter">1 / 4</span>
-                <button id="fc-next-btn" class="flash-nav-btn">Próximo ➡️</button>
+                <button type="button" id="fc-next-btn" class="flash-nav-btn">Próximo ➡️</button>
               </div>
             </div>
           </div>
@@ -345,16 +344,14 @@
 
             <div class="quiz-question-box">
               <div class="quiz-question-title" id="quiz-question-text">Carregando pergunta...</div>
-              <div class="quiz-options-list" id="quiz-options-container">
-                <!-- Botões de alternativa gerados dinamicamente -->
-              </div>
+              <div class="quiz-options-list" id="quiz-options-container"></div>
             </div>
 
             <!-- Feedback da Resposta -->
             <div class="quiz-feedback-box" id="quiz-feedback-box">
               <div id="quiz-feedback-msg" style="font-weight: 700; font-size: 1.15rem; margin-bottom: 0.5rem;"></div>
               <p id="quiz-feedback-explanation" style="font-size: 1.05rem;"></p>
-              <button id="btn-next-quiz" class="next-question-btn">Continuar ➡️</button>
+              <button type="button" id="btn-next-quiz" class="next-question-btn">Continuar ➡️</button>
             </div>
           </div>
 
@@ -362,22 +359,20 @@
           <div class="tab-pane" id="tab-curiosities">
             <div class="summary-card" style="background: #FFFBEB; border-color: #FDE68A;">
               <h3 style="color: #B45309;">✨ Baú de Segredos do Calisto:</h3>
-              <ul class="topics-list" id="study-curiosities-list" style="margin-top: 1rem;">
-                <!-- Curiosidades inseridas via JavaScript -->
-              </ul>
+              <ul class="topics-list" id="study-curiosities-list" style="margin-top: 1rem;"></ul>
             </div>
           </div>
         </div>
 
-        <!-- LATERAL: COMPANHEIRO CALISTO 3D FALANTE -->
-        <aside class="paco-companion-card">
+        <!-- LATERAL: COMPANHEIRO CALISTO 3D -->
+        <aside class="paco-companion-card" aria-label="Companheiro Calisto">
           <div id="paco-study-3d" class="paco-3d-canvas-box" style="width: 200px; height: 200px; margin: 0 auto 0.5rem;" title="Calisto"></div>
           <div class="paco-3d-hint" style="margin-bottom: 0.75rem;">👆 Calisto</div>
           <h3 class="paco-name">Calisto 🦜</h3>
           <div class="paco-speech-bubble" id="paco-study-speech">
             Vamos aprender juntos! Assista à apresentação, veja o infográfico ou clique nos cartões mágicos para treinar sua memória!
           </div>
-          <button id="btn-paco-speak" class="paco-voice-btn">
+          <button type="button" id="btn-paco-speak" class="paco-voice-btn">
             🔊 Ouvir o Calisto Falar
           </button>
         </aside>
@@ -386,44 +381,44 @@
 
   </div>
 
-  <!-- MODAL 1: BOAS-VINDAS & NOME DA CRIANÇA -->
-  <div class="modal-overlay" id="name-modal">
-    <div class="modal-content" style="max-width: 500px; text-align: center;">
-      <img src="assets/mascot.jpg" alt="Calisto Sorridente" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid #10B981; margin-bottom: 1rem; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);">
-      <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: #1E293B; margin-bottom: 0.5rem;">
-        Bem-vindo à Aventura! 🦜
-      </h2>
-      <p style="font-size: 1.1rem; color: #64748B; margin-bottom: 1.5rem;">
+  <!-- ===================================================================
+       MODAIS DO SISTEMA
+       =================================================================== -->
+
+  <!-- MODAL 1: NOME DA CRIANÇA -->
+  <div class="modal-overlay" id="name-modal" role="dialog" aria-modal="true" aria-labelledby="modal-name-title">
+    <div class="modal-content modal-name-card">
+      <img src="assets/mascot.jpg" alt="Calisto Sorridente" class="modal-avatar">
+      <h2 id="modal-name-title" class="modal-title">Bem-vindo à Aventura! 🦜</h2>
+      <p class="modal-subtitle">
         Eu sou o sábio <strong>Calisto</strong>! Como você se chama, pequeno explorador?
       </p>
 
       <form id="form-child-name" onsubmit="event.preventDefault(); window.salvarNomeCrianca();">
-        <input type="text" id="input-child-name" class="cert-name-input" placeholder="Digite seu nome..." autofocus required style="width: 90%; margin-bottom: 1.5rem;">
-        <div>
-          <button type="submit" class="speak-btn" style="width: 100%; justify-content: center; font-size: 1.2rem; padding: 0.85rem;">
-            🚀 Começar a Aventura!
-          </button>
-        </div>
+        <input type="text" id="input-child-name" class="cert-name-input" placeholder="Digite seu nome..." autofocus required>
+        <button type="submit" class="cta-primary-btn full-width">
+          🚀 Começar a Aventura!
+        </button>
       </form>
     </div>
   </div>
 
-  <!-- MODAL 2: CERTIFICADO DE VITÓRIA / MISSÃO CONCLUÍDA -->
-  <div class="modal-overlay" id="victory-modal">
+  <!-- MODAL 2: CERTIFICADO DE VITÓRIA -->
+  <div class="modal-overlay" id="victory-modal" role="dialog" aria-modal="true">
     <div class="modal-content">
-      <button class="modal-close-btn" id="btn-close-victory">&times;</button>
+      <button type="button" class="modal-close-btn" id="btn-close-victory" aria-label="Fechar">&times;</button>
       <div class="certificate-frame">
         <img src="assets/mascot.jpg" alt="Calisto Celebrando" class="cert-avatar">
         <h2 class="cert-title">🎉 Parabéns, Campeão! 🎉</h2>
         <p style="font-size: 1.15rem; color: #475569;">Você concluiu o módulo com sucesso!</p>
         
-        <input type="text" id="cert-child-name" class="cert-name-input" placeholder="Digite seu nome aqui!" value="Pequeno Explorador">
+        <input type="text" id="cert-child-name" class="cert-name-input" placeholder="Seu nome aqui" value="Pequeno Explorador">
         
-        <p style="font-size: 1.1rem; font-weight: 700; color: #16A34A; margin-bottom: 1.5rem;">
+        <p style="font-size: 1.15rem; font-weight: 800; color: #16A34A; margin-bottom: 1.5rem;">
           Você ganhou <strong>+3 Estrelas Douradas</strong> e <strong>+1 Troféu</strong>! ⭐⭐⭐🏆
         </p>
 
-        <button id="btn-claim-victory" class="speak-btn" style="padding: 0.85rem 2rem; font-size: 1.15rem;">
+        <button type="button" id="btn-claim-victory" class="cta-primary-btn" style="padding: 0.85rem 2rem; font-size: 1.15rem;">
           🚀 Continuar Explorando com o Calisto!
         </button>
       </div>
@@ -431,83 +426,95 @@
   </div>
 
   <!-- MODAL 3: BLOQUEIO POR SENHA / PIN DO EDUCADOR -->
-  <div class="modal-overlay" id="educator-pin-modal">
-    <div class="modal-content" style="max-width: 420px; text-align: center;">
-      <button class="modal-close-btn" id="btn-close-pin-modal">&times;</button>
-      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
-      <h2 style="font-family: var(--font-display); font-size: 1.6rem; color: #1E293B; margin-bottom: 0.4rem;">
-        Acesso do Educador
-      </h2>
-      <p style="font-size: 0.95rem; color: #64748B; margin-bottom: 1.25rem;">
-        Digite seu PIN de 4 dígitos para gerenciar e incluir novos workspaces.
+  <div class="modal-overlay" id="educator-pin-modal" role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
+    <div class="modal-content modal-pin-card">
+      <button type="button" class="modal-close-btn" id="btn-close-pin-modal" aria-label="Fechar">&times;</button>
+      <div class="pin-icon-badge">🔒</div>
+      <h2 id="pin-modal-title" class="modal-title">Acesso do Educador</h2>
+      <p class="modal-subtitle">
+        Área restrita a pais e professores para incluir, conectar ou excluir workspaces de estudo.
       </p>
 
       <form id="form-educator-pin" onsubmit="event.preventDefault(); window.validarPinEducador();">
-        <input type="password" id="input-educator-pin" maxlength="6" class="cert-name-input" placeholder="••••" autofocus style="width: 180px; text-align: center; font-size: 1.8rem; letter-spacing: 0.5rem; margin: 0 auto 1rem;">
-        <div id="pin-error-msg" style="color: #DC2626; font-size: 0.88rem; font-weight: 700; min-height: 1.3rem; margin-bottom: 0.75rem;"></div>
+        <div class="pin-input-wrap">
+          <input type="password" id="input-educator-pin" maxlength="6" class="pin-code-input" placeholder="••••" autocomplete="current-password" autofocus>
+        </div>
+        <div id="pin-error-msg" class="pin-error-text" role="alert"></div>
+
+        <!-- Teclado Numérico Visual para Touch / Tablets -->
+        <div class="pin-keypad" aria-label="Teclado numérico">
+          <button type="button" class="pin-key" data-num="1">1</button>
+          <button type="button" class="pin-key" data-num="2">2</button>
+          <button type="button" class="pin-key" data-num="3">3</button>
+          <button type="button" class="pin-key" data-num="4">4</button>
+          <button type="button" class="pin-key" data-num="5">5</button>
+          <button type="button" class="pin-key" data-num="6">6</button>
+          <button type="button" class="pin-key" data-num="7">7</button>
+          <button type="button" class="pin-key" data-num="8">8</button>
+          <button type="button" class="pin-key" data-num="9">9</button>
+          <button type="button" class="pin-key action-clear" id="btn-pin-clear">C</button>
+          <button type="button" class="pin-key" data-num="0">0</button>
+          <button type="button" class="pin-key action-backspace" id="btn-pin-backspace">⌫</button>
+        </div>
         
-        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-          <button type="button" id="btn-cancel-pin" class="flash-nav-btn" style="padding: 0.7rem 1.25rem;">Cancelar</button>
-          <button type="submit" class="speak-btn" style="background: #2563EB; padding: 0.7rem 1.75rem; font-size: 1rem;">
+        <div class="pin-actions-row">
+          <button type="button" id="btn-cancel-pin" class="flash-nav-btn">Cancelar</button>
+          <button type="submit" class="cta-primary-btn" style="background: #2563EB;">
             🔓 Entrar na Central
           </button>
         </div>
       </form>
-      <p style="font-size: 0.78rem; color: #94A3B8; margin-top: 1rem;">
-        * Senha padrão inicial: <strong>1234</strong> (alterável dentro da central).
+      <p class="pin-footer-hint">
+        * Senha padrão inicial: <strong>1234</strong> (alterável na aba de segurança).
       </p>
     </div>
   </div>
 
-  <!-- MODAL 4: CENTRAL COMPLETA DE GESTÃO DO EDUCADOR (PROTEGIDA POR SENHA) -->
-  <div class="modal-overlay" id="educator-modal">
-    <div class="modal-content" style="max-width: 820px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.6rem;">
-          <span style="font-size: 1.8rem;">🎓</span>
+  <!-- MODAL 4: CENTRAL COMPLETA DE GESTÃO DO EDUCADOR (PROTEGIDA POR PIN) -->
+  <div class="modal-overlay" id="educator-modal" role="dialog" aria-modal="true" aria-labelledby="ed-central-title">
+    <div class="modal-content educator-main-modal">
+      <div class="educator-modal-header">
+        <div class="educator-modal-brand">
+          <span class="ed-badge-icon">🎓</span>
           <div>
-            <h2 style="font-family: var(--font-display); font-size: 1.45rem; color: #1E3A8A; margin: 0;">
-              Central do Educador & Gestão de Estudos
-            </h2>
-            <p style="color: #64748B; font-size: 0.85rem; margin: 0;">
-              Gerencie, inclua, exclua e conecte workspaces do NotebookLM & Gemini para os alunos.
-            </p>
+            <h2 id="ed-central-title" class="ed-title">Central do Educador & Gestão de Estudos</h2>
+            <p class="ed-desc">Gerencie, inclua, exclua e conecte workspaces do NotebookLM & Gemini para as crianças.</p>
           </div>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button id="btn-educator-lock" class="flash-nav-btn" title="Bloquear painel" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+        <div class="ed-header-btns">
+          <button type="button" id="btn-educator-lock" class="flash-nav-btn" title="Bloquear painel agora">
             🔒 Bloquear
           </button>
-          <button class="modal-close-btn" id="btn-close-educator" style="position: static;">&times;</button>
+          <button type="button" class="modal-close-btn" id="btn-close-educator" aria-label="Fechar">&times;</button>
         </div>
       </div>
 
       <!-- Abas da Central do Educador -->
-      <div class="educator-tabs" style="margin-bottom: 1.25rem;">
-        <button class="educator-tab-btn active" data-ed-tab="ed-tab-workspaces">📚 Workspaces Ativos</button>
-        <button class="educator-tab-btn" data-ed-tab="ed-tab-import">🔗 Conectar NotebookLM / Gemini</button>
-        <button class="educator-tab-btn" data-ed-tab="ed-tab-json">📝 Editor JSON & Prompt</button>
-        <button class="educator-tab-btn" data-ed-tab="ed-tab-security">🔑 Alterar Senha (PIN)</button>
-      </div>
+      <nav class="educator-tabs" aria-label="Navegação da Central do Educador">
+        <button type="button" class="educator-tab-btn active" data-ed-tab="ed-tab-workspaces">📚 Workspaces Ativos</button>
+        <button type="button" class="educator-tab-btn" data-ed-tab="ed-tab-import">🔗 Conectar NotebookLM / Gemini API</button>
+        <button type="button" class="educator-tab-btn" data-ed-tab="ed-tab-json">📝 Editor JSON & Prompt</button>
+        <button type="button" class="educator-tab-btn" data-ed-tab="ed-tab-security">🔑 Alterar Senha (PIN)</button>
+      </nav>
 
       <!-- ABA 1: GERENCIAR WORKSPACES ATIVOS (INCLUIR & EXCLUIR) -->
       <div id="ed-tab-workspaces" class="ed-tab-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div class="ed-ws-header-row">
           <div>
-            <span style="font-weight: 800; color: #1E293B; font-size: 1.05rem;" id="educator-ws-count-header">Workspaces Cadastrados</span>
-            <p style="font-size: 0.85rem; color: #64748B; margin: 0;">Exclua temas desnecessários ou adicione novos módulos.</p>
+            <span class="ed-ws-heading" id="educator-ws-count-header">Workspaces Cadastrados</span>
+            <p class="ed-ws-sub">Exclua temas indesejados ou adicione novos módulos para os alunos.</p>
           </div>
-          <button type="button" id="btn-ed-goto-import" class="speak-btn" style="background: #2563EB; font-size: 0.95rem; padding: 0.6rem 1.15rem;">
+          <button type="button" id="btn-ed-goto-import" class="cta-primary-btn" style="background: #2563EB; font-size: 0.95rem; padding: 0.6rem 1.2rem;">
             ➕ Incluir Novo Workspace
           </button>
         </div>
 
         <div class="educator-workspaces-table-wrap" id="educator-workspaces-list">
-          <!-- Gerado dinamicamente via JavaScript -->
+          <!-- Renderizado dinamicamente via JS -->
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 1rem; border-top: 1px dashed #E2E8F0; padding-top: 0.75rem;">
-          <button type="button" id="btn-reset-defaults-ed" class="flash-nav-btn" style="color: #DC2626; border-color: #FECACA; font-size: 0.85rem;">
+        <div class="ed-ws-footer-row">
+          <button type="button" id="btn-reset-defaults-ed" class="flash-nav-btn danger">
             ↺ Restaurar 10 Temas Padrão Originais
           </button>
         </div>
@@ -517,50 +524,50 @@
       <div id="ed-tab-import" class="ed-tab-content" style="display: none;">
         <!-- Card de Conexão com a API do Google Gemini -->
         <div class="gemini-api-config-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div class="gemini-card-header">
             <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <span style="font-size: 1.2rem;">✨</span>
-              <strong>Conexão Gemini API (Geração & Extração Automática)</strong>
+              <span style="font-size: 1.3rem;">✨</span>
+              <strong>Conexão Gemini API (Geração & Extração Automática de Módulos)</strong>
             </div>
             <span id="gemini-api-status-badge" class="api-status-badge disconnected">⚪ Chave não informada</span>
           </div>
-          <p style="font-size: 0.84rem; color: #475569; margin-bottom: 0.65rem;">
-            A chave do Gemini permite ler URLs protegidas, tópicos e notas do NotebookLM, gerando quizzes, infográficos e slides infantis completos instantaneamente.
+          <p style="font-size: 0.86rem; color: #475569; margin-bottom: 0.65rem;">
+            A API do Google Gemini lê assuntos, notas e links do NotebookLM, gerando quizzes estruturados, infográficos, flashcards e slides para o Calisto.
           </p>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="password" id="gemini-api-key-input" class="cert-name-input" placeholder="Cole sua chave de API do Gemini (AIzaSy...)" style="flex: 1; font-size: 0.9rem; text-align: left;">
-            <button type="button" id="btn-save-gemini-key" class="flash-nav-btn" style="background: #EEF2FF; color: #4338CA; border-color: #C7D2FE; font-weight: 700;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="password" id="gemini-api-key-input" class="cert-name-input" placeholder="Cole sua chave de API do Gemini (AIzaSy...)" style="flex: 1; min-width: 240px; font-size: 0.9rem; text-align: left;">
+            <button type="button" id="btn-save-gemini-key" class="cta-primary-btn" style="background: #4338CA; font-size: 0.9rem; padding: 0.6rem 1.2rem;">
               💾 Salvar Chave
             </button>
           </div>
-          <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.35rem;">
-            Obtenha sua chave gratuita em: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #2563EB; font-weight: 700;">Google AI Studio ↗</a>
+          <div style="font-size: 0.8rem; color: #64748B; margin-top: 0.4rem;">
+            Obtenha sua chave gratuita em: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #2563EB; font-weight: 700;">Google AI Studio ↗</a>
           </div>
         </div>
 
         <!-- Formulário de Criação e Importação -->
         <div class="notebooklm-importer-box" style="margin-top: 1rem;">
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <label for="ed-notebooklm-url-input" style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 0.3rem;">
-              🔗 URL do Workspace / NotebookLM ou Link de Estudo:
+          <div class="form-group">
+            <label for="ed-notebooklm-url-input" class="form-label">
+              🔗 URL do Workspace / NotebookLM ou Link de Conteúdo:
             </label>
             <div style="display: flex; gap: 0.5rem;">
               <input type="url" id="ed-notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id ou link de artigo..." style="flex: 1; text-align: left; font-size: 0.95rem;">
-              <button type="button" id="btn-ed-paste-url" class="paste-quick-btn" title="Colar link">📋 Colar</button>
+              <button type="button" id="btn-ed-paste-url" class="paste-quick-btn" title="Colar link da área de transferência">📋 Colar</button>
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <label for="ed-topic-name-input" style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 0.3rem;">
-              💡 Assunto ou Título do Módulo (Opcional se fornecer Guia/URL):
+          <div class="form-group">
+            <label for="ed-topic-name-input" class="form-label">
+              💡 Assunto ou Título do Módulo (Opcional):
             </label>
-            <input type="text" id="ed-topic-name-input" class="cert-name-input" placeholder="Ex: Astronomia e Buracos Negros, Animais da Amazônia, Fotossíntese..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem;">
+            <input type="text" id="ed-topic-name-input" class="cert-name-input" placeholder="Ex: Astronomia, Animais da Amazônia, Robótica..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem;">
           </div>
 
           <!-- Upload ou Colar Texto do NotebookLM -->
-          <div class="form-group" style="margin-bottom: 0.85rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; flex-wrap: wrap; gap: 0.5rem;">
-              <label for="ed-manual-content-input" style="font-weight: 700; color: #1E293B; font-size: 0.9rem;">
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+              <label for="ed-manual-content-input" class="form-label" style="margin-bottom: 0;">
                 📝 Guia de Estudo / Briefing do NotebookLM (Texto ou Arquivo):
               </label>
               <div style="display: flex; gap: 0.4rem;">
@@ -571,16 +578,16 @@
                 </label>
               </div>
             </div>
-            <textarea id="ed-manual-content-input" class="json-editor-textarea" placeholder="Cole o texto copiado do NotebookLM (Study Guide, FAQ, Briefing) ou deixe em branco para gerar com a IA..." style="min-height: 110px; font-family: inherit; font-size: 0.88rem;"></textarea>
+            <textarea id="ed-manual-content-input" class="json-editor-textarea" placeholder="Cole o texto copiado do NotebookLM (Study Guide, FAQ, Briefing) ou deixe em branco para gerar direto com a IA..." style="min-height: 120px; font-family: inherit; font-size: 0.9rem;"></textarea>
           </div>
 
           <!-- Presets de Teste Rápido -->
-          <div style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 10px; padding: 0.65rem; margin-bottom: 1rem;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">⚡ Modelos Prontos para Testar:</span>
+          <div class="presets-quick-card">
+            <span style="font-size: 0.84rem; font-weight: 800; color: #475569;">⚡ Modelos Prontos para Testar:</span>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
-              <button type="button" class="preset-btn" id="btn-ed-preset-robotics" style="font-size: 0.8rem;">🤖 Robótica</button>
-              <button type="button" class="preset-btn" id="btn-ed-preset-coral" style="font-size: 0.8rem;">🌊 Corais</button>
-              <button type="button" class="preset-btn" id="btn-ed-preset-astronomy" style="font-size: 0.8rem;">🌌 Astronomia</button>
+              <button type="button" class="preset-btn" id="btn-ed-preset-robotics">🤖 Robótica & IA</button>
+              <button type="button" class="preset-btn" id="btn-ed-preset-coral">🌊 Recifes de Corais</button>
+              <button type="button" class="preset-btn" id="btn-ed-preset-astronomy">🌌 Astronomia & Galáxias</button>
             </div>
           </div>
 
@@ -595,7 +602,7 @@
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button type="button" id="btn-ed-generate-workspace" class="speak-btn" style="background: linear-gradient(135deg, #2563EB, #7C3AED); font-size: 1.05rem; padding: 0.75rem 1.6rem;">
+            <button type="button" id="btn-ed-generate-workspace" class="cta-primary-btn" style="background: linear-gradient(135deg, #2563EB, #7C3AED); font-size: 1.05rem; padding: 0.8rem 1.8rem;">
               🚀 Gerar & Adicionar Workspace 🦜
             </button>
           </div>
@@ -604,10 +611,10 @@
 
       <!-- ABA 3: EDITOR JSON & PROMPT -->
       <div id="ed-tab-json" class="ed-tab-content" style="display: none;">
-        <div style="margin-bottom: 1rem;">
+        <div style="margin-bottom: 1.2rem;">
           <h4 style="margin: 0 0 0.4rem; color: #1E293B;">🤖 Prompt para Gemini / NotebookLM</h4>
-          <p style="font-size: 0.85rem; color: #64748B; margin: 0 0 0.5rem;">Copie e cole este prompt no seu chat com IA para estruturar módulos:</p>
-          <div class="gemini-prompt-box" id="gemini-prompt-text" style="max-height: 120px; font-size: 0.8rem;">
+          <p style="font-size: 0.85rem; color: #64748B; margin: 0 0 0.5rem;">Copie e cole este prompt no seu chat com IA para estruturar módulos infantis:</p>
+          <div class="gemini-prompt-box" id="gemini-prompt-text" style="max-height: 120px; font-size: 0.82rem;">
 Por favor, transforme o conteúdo deste workspace de estudo em um módulo infantil para o portal do Periquito Calisto no formato JSON com a seguinte estrutura:
 {
   "id": "nlm_custom",
@@ -623,36 +630,36 @@ Por favor, transforme o conteúdo deste workspace de estudo em um módulo infant
   "quiz": [{ "pergunta": "Pergunta de múltipla escolha?", "opcoes": ["Opção A", "Opção B", "Opção C", "Opção D"], "respostaCorreta": 0, "explicacao": "Explicação do sábio periquito Calisto!" }]
 }
           </div>
-          <button id="btn-copy-prompt" class="copy-prompt-btn" style="margin-top: 0.4rem;">📋 Copiar Prompt do Gemini</button>
+          <button type="button" id="btn-copy-prompt" class="cta-primary-btn" style="background: #7C3AED; font-size: 0.85rem; padding: 0.5rem 1rem; margin-top: 0.4rem;">📋 Copiar Prompt do Gemini</button>
         </div>
 
         <div>
           <h4 style="margin: 0 0 0.4rem; color: #1E293B;">📝 Editor Direto de Dados JSON</h4>
           <textarea id="json-editor-input" class="json-editor-textarea" spellcheck="false" style="min-height: 160px; font-size: 0.85rem;"></textarea>
           <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-            <button id="btn-save-json" class="speak-btn" style="background: #10B981; font-size: 0.95rem;">💾 Salvar & Aplicar Agora</button>
+            <button type="button" id="btn-save-json" class="cta-primary-btn" style="background: #10B981; font-size: 0.95rem;">💾 Salvar & Aplicar Agora</button>
           </div>
         </div>
       </div>
 
       <!-- ABA 4: CONFIGURAÇÕES & SENHA (PIN) -->
       <div id="ed-tab-security" class="ed-tab-content" style="display: none;">
-        <div style="max-width: 450px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.25rem;">
-          <h4 style="margin: 0 0 0.5rem; color: #1E293B; font-size: 1.1rem;">🔑 Alterar Senha PIN do Educador</h4>
-          <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1rem;">
-            Escolha uma senha numérica de 4 a 6 dígitos para proteger as configurações contra alterações das crianças.
+        <div class="security-card-box">
+          <h4 style="margin: 0 0 0.5rem; color: #1E293B; font-size: 1.15rem;">🔑 Alterar Senha PIN do Educador</h4>
+          <p style="font-size: 0.88rem; color: #64748B; margin-bottom: 1.2rem;">
+            Escolha uma senha numérica de 4 a 6 dígitos para proteger as configurações e impedir que crianças alterem os módulos.
           </p>
 
           <form id="form-change-pin" onsubmit="event.preventDefault(); window.salvarNovoPinEducador();">
-            <div style="margin-bottom: 0.75rem;">
-              <label for="input-new-pin" style="display: block; font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.25rem;">Nova Senha PIN:</label>
+            <div style="margin-bottom: 0.85rem;">
+              <label for="input-new-pin" class="form-label">Nova Senha PIN:</label>
               <input type="password" id="input-new-pin" maxlength="6" class="cert-name-input" placeholder="Ex: 5678" required style="width: 100%; box-sizing: border-box; text-align: left; font-size: 1rem;">
             </div>
-            <div style="margin-bottom: 1rem;">
-              <label for="input-confirm-pin" style="display: block; font-weight: 700; font-size: 0.85rem; color: #334155; margin-bottom: 0.25rem;">Confirmar Nova Senha:</label>
+            <div style="margin-bottom: 1.2rem;">
+              <label for="input-confirm-pin" class="form-label">Confirmar Nova Senha:</label>
               <input type="password" id="input-confirm-pin" maxlength="6" class="cert-name-input" placeholder="Repita o novo PIN" required style="width: 100%; box-sizing: border-box; text-align: left; font-size: 1rem;">
             </div>
-            <button type="submit" class="speak-btn" style="background: #2563EB; font-size: 0.95rem; width: 100%; justify-content: center;">
+            <button type="submit" class="cta-primary-btn" style="background: #2563EB; font-size: 1rem; width: 100%; justify-content: center;">
               💾 Salvar Nova Senha PIN
             </button>
           </form>
@@ -661,7 +668,7 @@ Por favor, transforme o conteúdo deste workspace de estudo em um módulo infant
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- Scripts da Aplicação -->
   <script src="data/workspaces.js"></script>
   <script src="mascot3d.js"></script>
   <script src="app.js"></script>
