@@ -43,9 +43,18 @@ function fetchUrlContent(targetUrl, maxRedirects = 5) {
         },
         timeout: 10000
       }, (res) => {
-        // Trata redirecionamentos 301, 302, 307, 308
+        // Trata redirecionamentos 301, 302, 303, 307, 308
         if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
           const redirectUrl = new URL(res.headers.location, targetUrl).toString();
+          // Detecta se foi redirecionado para a tela de login do Google
+          if (redirectUrl.includes('accounts.google.com') || redirectUrl.includes('ServiceLogin') || redirectUrl.includes('InteractiveLogin')) {
+            return resolve({
+              statusCode: 401,
+              isGoogleAuth: true,
+              contentType: 'application/json',
+              body: JSON.stringify({ isGoogleAuth: true, message: 'Google Auth Login Required' })
+            });
+          }
           return resolve(fetchUrlContent(redirectUrl, maxRedirects - 1));
         }
 
@@ -53,10 +62,17 @@ function fetchUrlContent(targetUrl, maxRedirects = 5) {
         res.setEncoding('utf8');
         res.on('data', chunk => { data += chunk; });
         res.on('end', () => {
+          const isGoogleAuth = data.includes('accounts.google.com') ||
+            data.includes('InteractiveLogin') ||
+            data.includes('identifierId') ||
+            data.includes('Sign in - Google') ||
+            data.includes('Fazer login nas Contas do Google');
+
           resolve({
-            statusCode: res.statusCode,
+            statusCode: isGoogleAuth ? 401 : res.statusCode,
+            isGoogleAuth: isGoogleAuth,
             contentType: res.headers['content-type'] || '',
-            body: data
+            body: isGoogleAuth ? JSON.stringify({ isGoogleAuth: true }) : data
           });
         });
       });
@@ -96,6 +112,16 @@ const server = http.createServer(async (req, res) => {
 
     try {
       const result = await fetchUrlContent(targetUrl);
+      if (result.isGoogleAuth) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+        return res.end(JSON.stringify({
+          success: false,
+          isGoogleAuth: true,
+          targetUrl: targetUrl,
+          error: 'Este workspace do NotebookLM requer autenticação da sua Conta Google.'
+        }));
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
       return res.end(JSON.stringify({
         success: true,

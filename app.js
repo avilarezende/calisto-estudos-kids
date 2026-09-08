@@ -955,6 +955,8 @@ function abrirModalNotebookLM() {
   document.getElementById('notebooklm-modal').classList.add('open');
   const progBox = document.getElementById('notebooklm-progress-box');
   if (progBox) progBox.style.display = 'none';
+  const authBox = document.getElementById('notebooklm-auth-helper-box');
+  if (authBox) authBox.style.display = 'none';
 }
 
 function fecharModalNotebookLM() {
@@ -967,6 +969,8 @@ function carregarPresetNotebookLM(index) {
   if (presets[index]) {
     document.getElementById('notebooklm-url-input').value = presets[index].url;
     document.getElementById('notebooklm-content-input').value = presets[index].rawContent;
+    const authBox = document.getElementById('notebooklm-auth-helper-box');
+    if (authBox) authBox.style.display = 'none';
   }
 }
 
@@ -978,8 +982,82 @@ function carregarArquivoNotebookLM(e) {
   reader.onload = (evt) => {
     document.getElementById('notebooklm-content-input').value = evt.target.result;
     sounds.playPop();
+    const authBox = document.getElementById('notebooklm-auth-helper-box');
+    if (authBox) authBox.style.display = 'none';
   };
   reader.readAsText(file);
+}
+
+/**
+ * Função utilitária para colar da área de transferência no campo de URL ou Texto
+ */
+async function colarDoClipboardNaUrl() {
+  sounds.playPop();
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) return;
+
+    if (text.startsWith('http://') || text.startsWith('https://')) {
+      document.getElementById('notebooklm-url-input').value = text.trim();
+    } else {
+      // Se for texto longo (Guia de Estudo copiado), coloca na aba de texto e muda para ela!
+      document.getElementById('notebooklm-content-input').value = text;
+      document.getElementById('btn-nlm-tab-manual').click();
+    }
+  } catch (err) {
+    console.warn('Permissão de clipboard não concedida:', err);
+  }
+}
+
+async function colarDoClipboardNoTexto() {
+  sounds.playPop();
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      document.getElementById('notebooklm-content-input').value = text;
+      const authBox = document.getElementById('notebooklm-auth-helper-box');
+      if (authBox) authBox.style.display = 'none';
+    }
+  } catch (err) {
+    console.warn('Permissão de clipboard não concedida:', err);
+  }
+}
+
+async function colarClipboardEGerar() {
+  sounds.playPop();
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && text.trim().length > 0) {
+      document.getElementById('notebooklm-content-input').value = text;
+      const authBox = document.getElementById('notebooklm-auth-helper-box');
+      if (authBox) authBox.style.display = 'none';
+      processarImportacaoNotebookLM();
+    } else {
+      alert('A sua área de transferência está vazia! No NotebookLM, clique em "Copiar Guia de Estudo" ou "Copiar Briefing" antes de clicar aqui.');
+    }
+  } catch (err) {
+    alert('Por favor, pressione Ctrl+V no campo de texto para colar o conteúdo copiado do seu NotebookLM.');
+  }
+}
+
+function gerarWorkspacePorTopico(topicoFornecido) {
+  sounds.playPop();
+  let tema = topicoFornecido;
+  if (!tema) {
+    tema = prompt('Qual é o assunto ou título deste estudo? (Ex: Segredos do Universo, Robôs do Futuro, Vida nos Oceanos, Corpo Humano):');
+  }
+  if (!tema || tema.trim().length === 0) return;
+
+  const urlInput = document.getElementById('notebooklm-url-input').value.trim();
+  const ws = extrairMaterialCompleto(urlInput, '', tema.trim());
+  
+  window.WORKSPACES_DATA.unshift(ws);
+  window.salvarWorkspaces(window.WORKSPACES_DATA);
+
+  fecharModalNotebookLM();
+  sounds.playFanfare();
+  confetti.burst(140);
+  abrirApresentacao(ws);
 }
 
 /**
@@ -999,7 +1077,9 @@ async function processarImportacaoNotebookLM() {
   const progBox = document.getElementById('notebooklm-progress-box');
   const progBar = document.getElementById('notebooklm-progress-bar');
   const progStatus = document.getElementById('notebooklm-progress-status');
+  const authBox = document.getElementById('notebooklm-auth-helper-box');
 
+  if (authBox) authBox.style.display = 'none';
   progBox.style.display = 'block';
   progBar.style.width = '20%';
   progStatus.innerHTML = '📡 Conectando ao Workspace e buscando dados...';
@@ -1008,6 +1088,7 @@ async function processarImportacaoNotebookLM() {
   try {
     let rawContent = manualText;
     let fetchedTitle = '';
+    let isGoogleProtected = false;
 
     // Se houver uma URL fornecida, busca o conteúdo real via backend ou proxy
     if (urlInput) {
@@ -1016,13 +1097,26 @@ async function processarImportacaoNotebookLM() {
 
       try {
         const fetchedData = await buscarConteudoDaUrl(urlInput);
-        if (fetchedData && fetchedData.content) {
-          rawContent = (rawContent ? rawContent + '\n\n' : '') + fetchedData.content;
-          fetchedTitle = fetchedData.title || '';
+        if (fetchedData) {
+          if (fetchedData.isGoogleAuth) {
+            isGoogleProtected = true;
+          } else if (fetchedData.content) {
+            rawContent = (rawContent ? rawContent + '\n\n' : '') + fetchedData.content;
+            fetchedTitle = fetchedData.title || '';
+          }
         }
       } catch (fetchErr) {
         console.warn('Aviso: busca remota da URL retornou aviso, utilizando parser inteligente.', fetchErr);
       }
+    }
+
+    // Se o Google bloqueou o acesso por exigir login e não há texto manual colado
+    if (isGoogleProtected && !rawContent) {
+      progBox.style.display = 'none';
+      if (authBox) authBox.style.display = 'block';
+      sounds.playWrong();
+      falarTexto('Hehehe! O Google protegeu este notebook com a sua conta. Copie o Guia de Estudo no NotebookLM e clique no botão verde para eu colar e gerar!');
+      return;
     }
 
     progBar.style.width = '75%';
@@ -1065,6 +1159,9 @@ async function buscarConteudoDaUrl(url) {
     const res = await fetch(`/api/fetch-workspace?url=${encodeURIComponent(url)}`, { method: 'GET' });
     if (res.ok) {
       const json = await res.json();
+      if (json.isGoogleAuth) {
+        return { isGoogleAuth: true, title: '', content: '' };
+      }
       if (json.success && json.body) {
         return parseHtmlOrTextResponse(json.body, url);
       }
@@ -1096,7 +1193,7 @@ async function buscarConteudoDaUrl(url) {
   } catch (e) {}
 
   // Se for preset cadastrado, busca do preset
-  const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => p.url.toLowerCase() === url.toLowerCase() || url.includes('robotica') || url.includes('coral'));
+  const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => p.url.toLowerCase() === url.toLowerCase() || (url.includes('robotica') && p.url.includes('robotica')) || (url.includes('coral') && p.url.includes('coral')) || (url.includes('astronomia') && p.url.includes('astronomia')));
   if (preset) {
     return { title: preset.nome, content: preset.rawContent };
   }
@@ -1105,6 +1202,20 @@ async function buscarConteudoDaUrl(url) {
 }
 
 function parseHtmlOrTextResponse(rawHtml, url) {
+  if (typeof rawHtml !== 'string') {
+    return { title: '', content: '' };
+  }
+
+  // Detecção precoce de tela de login do Google
+  if (rawHtml.includes('accounts.google.com') ||
+      rawHtml.includes('ServiceLogin') ||
+      rawHtml.includes('InteractiveLogin') ||
+      rawHtml.includes('identifierId') ||
+      rawHtml.includes('Sign in - Google') ||
+      rawHtml.includes('Fazer login nas Contas do Google')) {
+    return { isGoogleAuth: true, title: '', content: '' };
+  }
+
   if (!rawHtml.includes('<html') && !rawHtml.includes('<body')) {
     return { title: '', content: rawHtml };
   }
@@ -1112,10 +1223,14 @@ function parseHtmlOrTextResponse(rawHtml, url) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(rawHtml, 'text/html');
 
-  // Remove scripts e estilos
-  doc.querySelectorAll('script, style, noscript, nav, footer, header').forEach(el => el.remove());
+  // Remove scripts, estilos e navegação
+  doc.querySelectorAll('script, style, noscript, nav, footer, header, svg').forEach(el => el.remove());
 
   const title = doc.querySelector('title')?.innerText || doc.querySelector('h1')?.innerText || '';
+  if (/Fazer login|Sign in/i.test(title)) {
+    return { isGoogleAuth: true, title: '', content: '' };
+  }
+
   const mainContent = doc.querySelector('main, article, #content, .content, body')?.innerText || doc.body.innerText || '';
 
   return {
@@ -1688,6 +1803,12 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-preset-astronomy', 'click', () => carregarPresetNotebookLM(2));
   safeBind('notebooklm-file-input', 'change', carregarArquivoNotebookLM);
   safeBind('btn-generate-notebooklm', 'click', processarImportacaoNotebookLM);
+
+  // Botões de Colar Rápido e Assistente de Autenticação do Google
+  safeBind('btn-nlm-paste-url', 'click', colarDoClipboardNaUrl);
+  safeBind('btn-nlm-paste-text', 'click', colarDoClipboardNoTexto);
+  safeBind('btn-auth-paste-generate', 'click', colarClipboardEGerar);
+  safeBind('btn-auth-topic-generate', 'click', () => gerarWorkspacePorTopico());
 
   // Abas do Modal NotebookLM
   safeBind('btn-nlm-tab-url', 'click', () => {

@@ -470,6 +470,9 @@
             </label>
             <div style="display: flex; gap: 0.5rem;">
               <input type="url" id="notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id ou link de estudo..." style="flex: 1; box-sizing: border-box; text-align: left; font-size: 1rem;">
+              <button type="button" id="btn-nlm-paste-url" class="paste-quick-btn" title="Colar link da área de transferência">
+                📋 Colar
+              </button>
             </div>
             <p style="font-size: 0.82rem; color: #64748B; margin-top: 0.35rem;">
               O Calisto se conectará à URL, lerá todo o material gerado e montará a apresentação automaticamente.
@@ -492,16 +495,55 @@
         <!-- ABA 2: CONTEÚDO MANUAL / ARQUIVO -->
         <div id="nlm-view-manual" style="display: none;">
           <div class="form-group" style="margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
               <label for="notebooklm-content-input" style="font-weight: 700; color: #1E293B;">
                 📝 Texto do Guia de Estudo / Briefing:
               </label>
-              <label class="file-upload-label" title="Carregar arquivo .txt, .md ou .json exportado">
-                📁 Carregar Arquivo
-                <input type="file" id="notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
-              </label>
+              <div style="display: flex; gap: 0.4rem;">
+                <button type="button" id="btn-nlm-paste-text" class="paste-quick-btn" title="Colar texto copiado do NotebookLM">
+                  📋 Colar do Clipboard
+                </button>
+                <label class="file-upload-label" title="Carregar arquivo .txt, .md ou .json exportado">
+                  📁 Carregar Arquivo
+                  <input type="file" id="notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
+                </label>
+              </div>
             </div>
-            <textarea id="notebooklm-content-input" class="json-editor-textarea" placeholder="Cole o texto gerado caso a sua URL exija login restrito..." style="min-height: 140px; font-family: inherit; font-size: 0.92rem;"></textarea>
+            <textarea id="notebooklm-content-input" class="json-editor-textarea" placeholder="Cole aqui o Guia de Estudos, Perguntas e Respostas ou Briefing gerado pelo seu NotebookLM..." style="min-height: 140px; font-family: inherit; font-size: 0.92rem;"></textarea>
+          </div>
+        </div>
+
+        <!-- CARD DE AJUDA PARA AUTENTICAÇÃO DO GOOGLE -->
+        <div id="notebooklm-auth-helper-box" class="notebooklm-auth-card" style="display: none;">
+          <div class="auth-card-header">
+            <span style="font-size: 1.6rem;">🔒</span>
+            <div>
+              <h4 style="margin: 0; color: #92400E; font-size: 1.05rem;">Proteção da Conta Google no NotebookLM</h4>
+              <p style="margin: 0; color: #78350F; font-size: 0.85rem;">O Google exige que a leitura deste notebook venha da sua sessão ativa no navegador.</p>
+            </div>
+          </div>
+          <div class="auth-card-actions">
+            <div style="font-size: 0.88rem; color: #78350F; margin-bottom: 0.6rem;">
+              💡 <strong>Como transformar este Notebook em Apresentação 3D com 1 clique:</strong>
+            </div>
+            <div class="auth-steps-list">
+              <div class="auth-step-item">
+                <span class="auth-step-num">1</span>
+                <span>Na aba do seu NotebookLM, clique em <strong>"Copiar Guia de Estudo"</strong>, <strong>"Copiar Briefing"</strong> ou selecione suas notas.</span>
+              </div>
+              <div class="auth-step-item">
+                <span class="auth-step-num">2</span>
+                <span>Clique no botão verde abaixo para o Calisto colar e gerar tudo automaticamente:</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap;">
+              <button type="button" id="btn-auth-paste-generate" class="speak-btn" style="background: #10B981; padding: 0.65rem 1.25rem; font-size: 0.95rem;">
+                📋 Colar do Clipboard & Criar Apresentação Agora!
+              </button>
+              <button type="button" id="btn-auth-topic-generate" class="flash-nav-btn" style="background: #EEF2FF; color: #4338CA; border-color: #C7D2FE; font-weight: 700;">
+                ✨ Gerar por Tópico com IA
+              </button>
+            </div>
           </div>
         </div>
 
