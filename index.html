@@ -180,6 +180,13 @@
               </ul>
             </div>
 
+            <!-- Infográfico Interativo no Slide (Opcional) -->
+            <div class="slide-infographic-box" id="pres-slide-infographic-box" style="display: none;">
+              <div class="infographic-container" id="pres-infographic-content">
+                <!-- Gerado dinamicamente -->
+              </div>
+            </div>
+
             <!-- Caixa de Desafio / Flashcard Interativo no Slide (Opcional) -->
             <div class="slide-interactive-box" id="pres-slide-interactive-box" style="display: none;">
               <div class="interactive-question" id="pres-interactive-q">Pergunta do desafio?</div>
@@ -227,7 +234,7 @@
       </div>
     </section>
 
-    <!-- TELA 3: SALA DE ESTUDOS DO WORKSPACE (VÍDEO/ÁUDIO, FLASHCARDS & QUIZ) -->
+    <!-- TELA 3: SALA DE ESTUDOS DO WORKSPACE (VÍDEO/ÁUDIO, FLASHCARDS, INFOGRÁFICOS & QUIZ) -->
     <section id="study-view" class="study-room">
       <div class="study-header">
         <button id="btn-back-hub" class="back-btn">
@@ -257,6 +264,9 @@
           <nav class="study-tabs">
             <button class="tab-btn active" data-tab="tab-video" id="tab-btn-video">
               📺 Cinema & Conteúdo
+            </button>
+            <button class="tab-btn" data-tab="tab-infographics" id="tab-btn-infographics">
+              📊 Infográficos
             </button>
             <button class="tab-btn" data-tab="tab-flashcards" id="tab-btn-flashcards">
               🃏 Cartões Mágicos
@@ -291,7 +301,21 @@
             </div>
           </div>
 
-          <!-- ABA 2: FLASHCARDS 3D -->
+          <!-- ABA 2: INFOGRÁFICOS INTERATIVOS -->
+          <div class="tab-pane" id="tab-infographics">
+            <div class="summary-card" style="background: #F0FDF4; border-color: #BBF7D0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="color: #166534; margin: 0;">📊 Infográfico do Conhecimento:</h3>
+                <span class="pres-badge" style="background: #DCFCE7; color: #15803D;">Esquema Visual</span>
+              </div>
+              <p id="infographic-intro-text" style="color: #334155; font-weight: 600; font-size: 1.05rem; margin-bottom: 1.25rem;"></p>
+              <div class="infographics-grid" id="study-infographics-container">
+                <!-- Infográficos inseridos via JavaScript -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 3: FLASHCARDS 3D -->
           <div class="tab-pane" id="tab-flashcards">
             <div class="flashcards-container">
               <div class="flashcard-wrapper" id="flashcard-element" title="Clique no cartão para virar e ver a resposta!">
@@ -318,7 +342,7 @@
             </div>
           </div>
 
-          <!-- ABA 3: QUIZ GAMIFICADO -->
+          <!-- ABA 4: QUIZ GAMIFICADO -->
           <div class="tab-pane" id="tab-quiz">
             <div class="quiz-header">
               <div class="quiz-lives">
@@ -343,7 +367,7 @@
             </div>
           </div>
 
-          <!-- ABA 4: CURIOSIDADES EXTRAS -->
+          <!-- ABA 5: CURIOSIDADES EXTRAS -->
           <div class="tab-pane" id="tab-curiosities">
             <div class="summary-card" style="background: #FFFBEB; border-color: #FDE68A;">
               <h3 style="color: #B45309;">✨ Baú de Segredos do Calisto:</h3>
@@ -360,7 +384,7 @@
           <div class="paco-3d-hint" style="margin-bottom: 0.75rem;">👆 Calisto</div>
           <h3 class="paco-name">Calisto 🦜</h3>
           <div class="paco-speech-bubble" id="paco-study-speech">
-            Vamos aprender juntos! Assista à apresentação, veja o vídeo ou clique nos cartões mágicos para treinar sua memória!
+            Vamos aprender juntos! Assista à apresentação, veja o infográfico ou clique nos cartões mágicos para treinar sua memória!
           </div>
           <button id="btn-paco-speak" class="paco-voice-btn">
             🔊 Ouvir o Calisto Falar
@@ -415,64 +439,87 @@
     </div>
   </div>
 
-  <!-- MODAL 3: IMPORTADOR INTELIGENTE DO GOOGLE NOTEBOOKLM (NOVO!) -->
+  <!-- MODAL 3: IMPORTADOR INTELIGENTE DO GOOGLE NOTEBOOKLM (BUSCA DIRETA NA URL) -->
   <div class="modal-overlay" id="notebooklm-modal">
     <div class="modal-content" style="max-width: 720px;">
       <button class="modal-close-btn" id="btn-close-notebooklm">&times;</button>
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-        <span style="font-size: 2rem;">🔗</span>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <span style="font-size: 2.2rem;">🌐</span>
         <div>
           <h2 style="font-family: var(--font-display); font-size: 1.6rem; color: #1E40AF; margin: 0;">
-            Importar Projeto do Google NotebookLM
+            Buscar & Consumir Material do Workspace
           </h2>
           <p style="color: #64748B; font-size: 0.95rem; margin: 0;">
-            O Calisto transformará seus materiais em uma <strong>Apresentação 3D, Flashcards e Quiz</strong>!
+            Insira a URL do seu <strong>NotebookLM</strong> ou página de estudo para buscar vídeos, infográficos, quizzes e curiosidades!
           </p>
         </div>
       </div>
 
+      <!-- Abas do Importador: URL Automática vs Manual -->
+      <div class="educator-tabs" style="margin-bottom: 1rem;">
+        <button class="educator-tab-btn active" id="btn-nlm-tab-url" type="button">🌐 Busca Direta na URL</button>
+        <button class="educator-tab-btn" id="btn-nlm-tab-manual" type="button">📝 Conteúdo Manual / Arquivo</button>
+      </div>
+
       <div class="notebooklm-importer-box">
-        <!-- Campo 1: URL do NotebookLM -->
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <label for="notebooklm-url-input" style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 0.35rem;">
-            🌐 URL do seu Projeto no NotebookLM:
-          </label>
-          <input type="url" id="notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id-aqui..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 1rem;">
-          <p style="font-size: 0.82rem; color: #64748B; margin-top: 0.3rem;">
-            Cole o link do seu notebook para vincular o projeto ao Calisto.
-          </p>
-        </div>
+        <!-- ABA 1: BUSCA DIRETA PELA URL -->
+        <div id="nlm-view-url">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="notebooklm-url-input" style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 0.35rem;">
+              🔗 URL do seu Workspace / Projeto:
+            </label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="url" id="notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id ou link de estudo..." style="flex: 1; box-sizing: border-box; text-align: left; font-size: 1rem;">
+            </div>
+            <p style="font-size: 0.82rem; color: #64748B; margin-top: 0.35rem;">
+              O Calisto se conectará à URL, lerá todo o material gerado e montará a apresentação automaticamente.
+            </p>
+          </div>
 
-        <!-- Seletor de Modelos Prontos para Teste Rápido -->
-        <div style="margin-bottom: 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 0.75rem;">
-          <label style="font-weight: 700; color: #475569; font-size: 0.88rem; display: block; margin-bottom: 0.4rem;">
-            ⚡ Ou escolha um modelo pronto para testar em 1 segundo:
-          </label>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="preset-btn" id="btn-preset-robotics">🤖 Robótica & Inteligência Artificial</button>
-            <button type="button" class="preset-btn" id="btn-preset-coral">🌊 Recifes de Coral & Oceanos</button>
+          <!-- Exemplos de URLs de Teste Rápido -->
+          <div style="margin-bottom: 1.25rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 0.75rem;">
+            <label style="font-weight: 700; color: #475569; font-size: 0.88rem; display: block; margin-bottom: 0.4rem;">
+              ⚡ Ou clique para testar com workspaces prontos:
+            </label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="preset-btn" id="btn-preset-robotics">🤖 Robótica & Inteligência Artificial</button>
+              <button type="button" class="preset-btn" id="btn-preset-coral">🌊 Recifes de Coral & Oceanos</button>
+              <button type="button" class="preset-btn" id="btn-preset-astronomy">🌌 Astronomia & Buracos Negros</button>
+            </div>
           </div>
         </div>
 
-        <!-- Campo 2: Conteúdos Gerados no Workspace do NotebookLM -->
-        <div class="form-group" style="margin-bottom: 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-            <label for="notebooklm-content-input" style="font-weight: 700; color: #1E293B;">
-              📝 Itens Produzidos no Workspace (Guia de Estudo, FAQ, Briefing ou Notas):
-            </label>
-            <label class="file-upload-label" title="Carregar arquivo .txt ou .md exportado do NotebookLM">
-              📁 Carregar Arquivo
-              <input type="file" id="notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
-            </label>
+        <!-- ABA 2: CONTEÚDO MANUAL / ARQUIVO -->
+        <div id="nlm-view-manual" style="display: none;">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label for="notebooklm-content-input" style="font-weight: 700; color: #1E293B;">
+                📝 Texto do Guia de Estudo / Briefing:
+              </label>
+              <label class="file-upload-label" title="Carregar arquivo .txt, .md ou .json exportado">
+                📁 Carregar Arquivo
+                <input type="file" id="notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
+              </label>
+            </div>
+            <textarea id="notebooklm-content-input" class="json-editor-textarea" placeholder="Cole o texto gerado caso a sua URL exija login restrito..." style="min-height: 140px; font-family: inherit; font-size: 0.92rem;"></textarea>
           </div>
-          <textarea id="notebooklm-content-input" class="json-editor-textarea" placeholder="Cole aqui o texto do seu Guia de Estudos, FAQ, Resumo do Briefing ou Notas geradas pelo NotebookLM... O Calisto vai organizar tudo automaticamente!" style="min-height: 180px; font-family: inherit; font-size: 0.92rem;"></textarea>
+        </div>
+
+        <!-- Indicador Visual de Progresso de Busca -->
+        <div id="notebooklm-progress-box" class="notebooklm-progress-box" style="display: none;">
+          <div class="progress-bar-track">
+            <div id="notebooklm-progress-bar" class="progress-bar-fill"></div>
+          </div>
+          <div id="notebooklm-progress-status" class="progress-status-text">
+            📡 Conectando ao Workspace...
+          </div>
         </div>
 
         <!-- Botão de Ação Principal -->
-        <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: flex-end; margin-top: 1rem; flex-wrap: wrap;">
           <button type="button" id="btn-cancel-notebooklm" class="flash-nav-btn">Cancelar</button>
           <button type="button" id="btn-generate-notebooklm" class="speak-btn" style="background: linear-gradient(135deg, #2563EB, #7C3AED); padding: 0.85rem 1.75rem; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);">
-            ✨ Gerar Apresentação & Sala de Estudos 🦜
+            🚀 Buscar & Gerar Apresentação com Calisto 🦜
           </button>
         </div>
       </div>

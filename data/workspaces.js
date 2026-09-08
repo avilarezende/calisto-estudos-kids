@@ -450,7 +450,46 @@ function gerarSlidesParaWorkspace(ws) {
     });
   }
 
-  // Slide 4: Áudio Overview / Podcast do NotebookLM
+  // Slide 4: Infográfico Visual Interativo
+  if (ws.infograficos && ws.infograficos.length > 0) {
+    const info = ws.infograficos[0];
+    slides.push({
+      id: slides.length + 1,
+      tipo: 'infografico',
+      icone: '📊',
+      titulo: info.titulo || 'Mapa Visual & Infográfico',
+      subtitulo: info.subtitulo || 'Conceitos ilustrados em passos simples',
+      falaCalisto: `Olhem só esse infográfico genial! Cada passo mostra como tudo funciona de forma clara e visual! Prestem atenção em cada etapa!`,
+      destaque: info.estatisticaDestaque ? `${info.estatisticaDestaque.valor} — ${info.estatisticaDestaque.rotulo}` : 'Esquema visual do conhecimento!',
+      infografico: info,
+      topicos: (info.itens || []).map(it => `${it.icone || '📌'} ${it.titulo}: ${it.descricao}`)
+    });
+  } else if (ws.topicos && ws.topicos.length >= 2) {
+    // Gera infográfico automático baseado nos tópicos
+    const itensAuto = ws.topicos.slice(0, 3).map((t, i) => ({
+      numero: (i + 1).toString(),
+      icone: ['🌱', '⚡', '🌟', '🚀'][i] || '📌',
+      titulo: `Passo ${i + 1}`,
+      descricao: t
+    }));
+    slides.push({
+      id: slides.length + 1,
+      tipo: 'infografico',
+      icone: '📊',
+      titulo: 'Infográfico do Conhecimento',
+      subtitulo: 'Esquema passo-a-passo dos pontos essenciais',
+      falaCalisto: `Preparei um infográfico especial para vocês visualizarem as ideias principais de relance!`,
+      destaque: 'Passos essenciais para dominar o tema!',
+      infografico: {
+        titulo: 'Esquema Conceitual do Saber',
+        subtitulo: 'Entendendo a lógica do tema',
+        itens: itensAuto
+      },
+      topicos: itensAuto.map(it => `${it.icone} ${it.titulo}: ${it.descricao}`)
+    });
+  }
+
+  // Slide 5: Áudio Overview / Podcast do NotebookLM
   if (ws.audioUrl || ws.audioOverviewText) {
     slides.push({
       id: slides.length + 1,
@@ -469,7 +508,7 @@ function gerarSlidesParaWorkspace(ws) {
     });
   }
 
-  // Slide 5: Curiosidades
+  // Slide 6: Curiosidades
   if (ws.curiosidades && ws.curiosidades.length > 0) {
     slides.push({
       id: slides.length + 1,
@@ -483,7 +522,7 @@ function gerarSlidesParaWorkspace(ws) {
     });
   }
 
-  // Slide 6: Flashcards / Desafio Rápido
+  // Slide 7: Flashcards / Desafio Rápido
   if (ws.flashcards && ws.flashcards.length > 0) {
     const fc = ws.flashcards[0];
     slides.push({
@@ -503,7 +542,7 @@ function gerarSlidesParaWorkspace(ws) {
     });
   }
 
-  // Slide 7: Conclusão & Convite ao Quiz
+  // Slide 8: Conclusão & Convite ao Quiz
   slides.push({
     id: slides.length + 1,
     tipo: 'conclusao',
@@ -515,7 +554,7 @@ function gerarSlidesParaWorkspace(ws) {
     topicos: [
       'Apresentação 100% concluída!',
       'Ganhe +3 Estrelas completando a Missão Desafio (Quiz).',
-      'Treine a memória com todos os Cartões Mágicos.'
+      'Treine a memória com todos os Cartões Mágicos e Infográficos.'
     ]
   });
 
@@ -603,6 +642,46 @@ C) Três corações
 D) Nenhum coração
 Correta: C
 Explicação: Os polvos têm três corações incríveis e sangue azul!`
+  },
+  {
+    nome: "🌌 Guia de Estudo: Astronomia, Galáxias & Buracos Negros",
+    url: "https://notebooklm.google.com/notebook/astronomia-galaxias-buracos-negros",
+    rawContent: `# Guia de Estudo NotebookLM: Mistérios do Universo, Galáxias e Buracos Negros
+
+## Resumo do Briefing
+O universo é um lugar gigantesco cheio de bilhões de galáxias, estrelas brilhantes, planetas misteriosos e buracos negros cósmicos fascinantes!
+
+## Tópicos Principais
+- A nossa galáxia se chama Via Láctea e tem formato de espiral com centenas de bilhões de estrelas.
+- O Sol é uma estrela de tamanho médio que fornece toda a luz e calor necessários para a vida na Terra.
+- Buracos negros são regiões do espaço com uma gravidade tão gigantesca que nem mesmo a luz consegue escapar deles!
+- Telescópios espaciais como o James Webb tiram fotos incríveis das primeiras estrelas do universo.
+
+## Curiosidades
+- Se você pudesse viajar na velocidade da luz, demoraria 100.000 anos para atravessar a Via Láctea inteira!
+- No centro da nossa galáxia existe um buraco negro supermassivo chamado Sagitário A*!
+
+## Glossário & FAQ
+- O que é uma galáxia? | É uma família gigantesca formada por bilhões de estrelas, planetas, poeira cósmica e gás!
+- O que é gravidade? | É a força invisível que puxa as coisas umas para as outras e nos mantém com os pés no chão.
+- Por que as estrelas brilham? | Porque elas são enormes fornos cósmicos gerando energia por fusão nuclear.
+
+## Questões para Quiz
+1. Qual é o nome da galáxia onde fica o nosso Sistema Solar?
+A) Andrômeda
+B) Via Láctea
+C) Galáxia do Sombrero
+D) Centauro
+Correta: B
+Explicação: A Terra e o Sol estão localizados no braço de Órion da Via Láctea!
+
+2. O que acontece com a luz quando chega perto de um buraco negro?
+A) Ela fica verde
+B) Ela é atraída pela gravidade e não consegue escapar
+C) Ela explode em fogos de artifício
+D) Ela volta para trás imediatamente
+Correta: B
+Explicação: A gravidade de um buraco negro é tão poderosa que nada, nem mesmo a luz, pode escapar de dentro dele!`
   }
 ];
 
