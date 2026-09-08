@@ -2029,6 +2029,157 @@ body {
   transform: translateY(-1px);
 }
 
+/* PAINEL DE CONFIGURAÇÃO GEMINI API NO MODO EDUCADOR */
+.gemini-api-config-card {
+  background: #F0FDF4;
+  border: 1.5px solid #86EFAC;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.api-status-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.api-status-badge.connected {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+
+.api-status-badge.disconnected {
+  background: #F1F5F9;
+  color: #64748B;
+  border: 1px solid #CBD5E1;
+}
+
+/* TABELA DE GESTÃO DE WORKSPACES DO EDUCADOR */
+.educator-workspaces-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.educator-ws-row {
+  background: white;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  transition: var(--transition-fast);
+}
+
+.educator-ws-row:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.educator-ws-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.educator-ws-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.educator-ws-info {
+  min-width: 0;
+}
+
+.educator-ws-title {
+  font-weight: 800;
+  color: #1E293B;
+  font-size: 1rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.educator-ws-meta {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.ed-ws-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+}
+
+.ed-ws-badge.nlm {
+  background: #EDE9FE;
+  color: #6D28D9;
+}
+
+.ed-ws-badge.default {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.ed-ws-badge.stats {
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.educator-ws-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.ed-action-btn {
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ed-action-btn.view {
+  background: #EEF2FF;
+  color: #4338CA;
+  border-color: #C7D2FE;
+}
+
+.ed-action-btn.view:hover {
+  background: #E0E7FF;
+}
+
+.ed-action-btn.delete {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+.ed-action-btn.delete:hover {
+  background: #FEE2E2;
+}
+
 /* ===================================================================
    RESPONSIVIDADE
    =================================================================== */

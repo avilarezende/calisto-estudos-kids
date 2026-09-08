@@ -948,195 +948,294 @@ function fecharWorkspace() {
 }
 
 // ====================================================================
-// MOTOR DE BUSCA & CONSUMO DIRETO DA URL DO WORKSPACE
+// CENTRAL DO EDUCADOR: AUTENTICAÇÃO POR PIN, GESTÃO & GEMINI API
 // ====================================================================
-function abrirModalNotebookLM() {
-  sounds.playPop();
-  document.getElementById('notebooklm-modal').classList.add('open');
-  const progBox = document.getElementById('notebooklm-progress-box');
-  if (progBox) progBox.style.display = 'none';
-  const authBox = document.getElementById('notebooklm-auth-helper-box');
-  if (authBox) authBox.style.display = 'none';
+
+function getEducatorPin() {
+  return localStorage.getItem('CALISTO_EDUCATOR_PIN') || '1234';
 }
 
-function fecharModalNotebookLM() {
-  document.getElementById('notebooklm-modal').classList.remove('open');
+function salvarNovoPinEducador() {
+  sounds.playPop();
+  const newPin = document.getElementById('input-new-pin').value.trim();
+  const confirmPin = document.getElementById('input-confirm-pin').value.trim();
+
+  if (!newPin || newPin.length < 4) {
+    alert('O PIN deve ter entre 4 e 6 dígitos.');
+    return;
+  }
+  if (newPin !== confirmPin) {
+    sounds.playWrong();
+    alert('Os PINs digitados não coincidem!');
+    return;
+  }
+
+  localStorage.setItem('CALISTO_EDUCATOR_PIN', newPin);
+  sounds.playCorrect();
+  confetti.burst(50);
+  alert('✅ Senha PIN alterada com sucesso!');
+  document.getElementById('input-new-pin').value = '';
+  document.getElementById('input-confirm-pin').value = '';
 }
 
-function carregarPresetNotebookLM(index) {
+function abrirModalEducador() {
   sounds.playPop();
-  const presets = window.NOTEBOOKLM_PRESETS || [];
-  if (presets[index]) {
-    document.getElementById('notebooklm-url-input').value = presets[index].url;
-    document.getElementById('notebooklm-content-input').value = presets[index].rawContent;
-    const authBox = document.getElementById('notebooklm-auth-helper-box');
-    if (authBox) authBox.style.display = 'none';
+  if (AppState.educatorAuthenticated) {
+    document.getElementById('educator-modal').classList.add('open');
+    renderizarListaWorkspacesEducador();
+    atualizarStatusGeminiKey();
+  } else {
+    document.getElementById('educator-pin-modal').classList.add('open');
+    document.getElementById('input-educator-pin').value = '';
+    document.getElementById('pin-error-msg').textContent = '';
+    setTimeout(() => {
+      const pinInput = document.getElementById('input-educator-pin');
+      if (pinInput) pinInput.focus();
+    }, 100);
   }
 }
 
-function carregarArquivoNotebookLM(e) {
+function fecharModalPin() {
+  document.getElementById('educator-pin-modal').classList.remove('open');
+}
+
+function validarPinEducador() {
+  const input = document.getElementById('input-educator-pin').value.trim();
+  const realPin = getEducatorPin();
+  const errorMsg = document.getElementById('pin-error-msg');
+
+  if (input === realPin) {
+    AppState.educatorAuthenticated = true;
+    sounds.playFanfare();
+    fecharModalPin();
+    document.getElementById('educator-modal').classList.add('open');
+    renderizarListaWorkspacesEducador();
+    atualizarStatusGeminiKey();
+  } else {
+    sounds.playWrong();
+    if (errorMsg) errorMsg.textContent = '❌ PIN incorreto! Tente novamente.';
+    document.getElementById('input-educator-pin').value = '';
+  }
+}
+
+function bloquearEducador() {
+  AppState.educatorAuthenticated = false;
+  sounds.playPop();
+  document.getElementById('educator-modal').classList.remove('open');
+}
+
+function fecharModalEducador() {
+  document.getElementById('educator-modal').classList.remove('open');
+}
+
+// --------------------------------------------------------------------
+// GERENCIADOR DE WORKSPACES DO EDUCADOR (LISTAR, EXCLUIR, RESTAURAR)
+// --------------------------------------------------------------------
+
+function renderizarListaWorkspacesEducador() {
+  const container = document.getElementById('educator-workspaces-list');
+  const countHeader = document.getElementById('educator-ws-count-header');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const data = window.WORKSPACES_DATA || [];
+  if (countHeader) countHeader.textContent = `${data.length} Workspaces Ativos Cadastrados`;
+
+  data.forEach((ws, idx) => {
+    const row = document.createElement('div');
+    row.className = 'educator-ws-row';
+    const isNlm = ws.isNotebookLM || (typeof ws.id === 'string' && ws.id.startsWith('nlm_'));
+
+    row.innerHTML = `
+      <div class="educator-ws-left">
+        <span class="educator-ws-icon">${ws.icone || '📖'}</span>
+        <div class="educator-ws-info">
+          <h4 class="educator-ws-title">${ws.titulo}</h4>
+          <div class="educator-ws-meta">
+            <span class="ed-ws-badge ${isNlm ? 'nlm' : 'default'}">${isNlm ? '🏷️ NotebookLM / IA' : '🌱 Padrão'}</span>
+            <span class="ed-ws-badge stats">${ws.topicos ? ws.topicos.length : 0} Tópicos</span>
+            <span class="ed-ws-badge stats">${ws.quiz ? ws.quiz.length : 0} Perguntas de Quiz</span>
+          </div>
+        </div>
+      </div>
+      <div class="educator-ws-actions">
+        <button type="button" class="ed-action-btn view btn-ed-view-pres" title="Ver apresentação 3D">
+          🎬 Ver
+        </button>
+        <button type="button" class="ed-action-btn delete btn-ed-delete-ws" title="Excluir este workspace">
+          🗑️ Excluir
+        </button>
+      </div>
+    `;
+
+    // Botão Ver Apresentação
+    row.querySelector('.btn-ed-view-pres').addEventListener('click', () => {
+      fecharModalEducador();
+      abrirApresentacao(ws);
+    });
+
+    // Botão Excluir
+    row.querySelector('.btn-ed-delete-ws').addEventListener('click', () => {
+      excluirWorkspacePorId(ws.id, ws.titulo);
+    });
+
+    container.appendChild(row);
+  });
+}
+
+function excluirWorkspacePorId(id, titulo) {
+  sounds.playPop();
+  if (!confirm(`Deseja realmente excluir o workspace "${titulo}"?\nOs alunos não verão mais este módulo na tela principal.`)) {
+    return;
+  }
+
+  window.WORKSPACES_DATA = (window.WORKSPACES_DATA || []).filter(ws => ws.id !== id);
+  window.salvarWorkspaces(window.WORKSPACES_DATA);
+
+  sounds.playCorrect();
+  renderizarListaWorkspacesEducador();
+  renderizarGridWorkspaces();
+}
+
+function restaurarPadroesEducador() {
+  if (confirm('Deseja restaurar os 10 temas educativos originais do Calisto?')) {
+    window.WORKSPACES_DATA = window.restaurarWorkspacesPadrao();
+    sounds.playPop();
+    document.getElementById('json-editor-input').value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
+    renderizarGridWorkspaces();
+    renderizarListaWorkspacesEducador();
+    alert('↺ 10 Temas padrão restaurados com sucesso!');
+  }
+}
+
+// --------------------------------------------------------------------
+// INTEGRAÇÃO COM A API DO GOOGLE GEMINI & NOTEBOOKLM
+// --------------------------------------------------------------------
+
+function getGeminiApiKey() {
+  return localStorage.getItem('CALISTO_GEMINI_KEY') || '';
+}
+
+function salvarChaveGemini() {
+  sounds.playPop();
+  const input = document.getElementById('gemini-api-key-input');
+  const key = input.value.trim();
+  localStorage.setItem('CALISTO_GEMINI_KEY', key);
+  atualizarStatusGeminiKey();
+  sounds.playCorrect();
+  alert(key ? '✅ Chave da API do Gemini salva com sucesso!' : 'Chave removida.');
+}
+
+function atualizarStatusGeminiKey() {
+  const key = getGeminiApiKey();
+  const input = document.getElementById('gemini-api-key-input');
+  const badge = document.getElementById('gemini-api-status-badge');
+  if (input && key) input.value = key;
+
+  if (badge) {
+    if (key && key.length > 10) {
+      badge.className = 'api-status-badge connected';
+      badge.textContent = '✅ Conectado ao Gemini 2.0 Flash';
+    } else {
+      badge.className = 'api-status-badge disconnected';
+      badge.textContent = '⚪ Chave não informada';
+    }
+  }
+}
+
+function carregarPresetEducador(index) {
+  sounds.playPop();
+  const presets = window.NOTEBOOKLM_PRESETS || [];
+  if (presets[index]) {
+    document.getElementById('ed-notebooklm-url-input').value = presets[index].url;
+    document.getElementById('ed-manual-content-input').value = presets[index].rawContent;
+    document.getElementById('ed-topic-name-input').value = presets[index].nome.replace(/^[^\w\s]+/, '').trim();
+  }
+}
+
+function carregarArquivoEducador(e) {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = (evt) => {
-    document.getElementById('notebooklm-content-input').value = evt.target.result;
+    document.getElementById('ed-manual-content-input').value = evt.target.result;
     sounds.playPop();
-    const authBox = document.getElementById('notebooklm-auth-helper-box');
-    if (authBox) authBox.style.display = 'none';
   };
   reader.readAsText(file);
 }
 
 /**
- * Função utilitária para colar da área de transferência no campo de URL ou Texto
+ * Geração de Workspace: via API do Gemini ou Parser inteligente de URL/Texto
  */
-async function colarDoClipboardNaUrl() {
-  sounds.playPop();
-  try {
-    const text = await navigator.clipboard.readText();
-    if (!text) return;
+async function processarGeracaoEducador() {
+  const urlInput = document.getElementById('ed-notebooklm-url-input').value.trim();
+  const topicInput = document.getElementById('ed-topic-name-input').value.trim();
+  const manualText = document.getElementById('ed-manual-content-input').value.trim();
+  const apiKey = getGeminiApiKey();
 
-    if (text.startsWith('http://') || text.startsWith('https://')) {
-      document.getElementById('notebooklm-url-input').value = text.trim();
-    } else {
-      // Se for texto longo (Guia de Estudo copiado), coloca na aba de texto e muda para ela!
-      document.getElementById('notebooklm-content-input').value = text;
-      document.getElementById('btn-nlm-tab-manual').click();
-    }
-  } catch (err) {
-    console.warn('Permissão de clipboard não concedida:', err);
-  }
-}
-
-async function colarDoClipboardNoTexto() {
-  sounds.playPop();
-  try {
-    const text = await navigator.clipboard.readText();
-    if (text) {
-      document.getElementById('notebooklm-content-input').value = text;
-      const authBox = document.getElementById('notebooklm-auth-helper-box');
-      if (authBox) authBox.style.display = 'none';
-    }
-  } catch (err) {
-    console.warn('Permissão de clipboard não concedida:', err);
-  }
-}
-
-async function colarClipboardEGerar() {
-  sounds.playPop();
-  try {
-    const text = await navigator.clipboard.readText();
-    if (text && text.trim().length > 0) {
-      document.getElementById('notebooklm-content-input').value = text;
-      const authBox = document.getElementById('notebooklm-auth-helper-box');
-      if (authBox) authBox.style.display = 'none';
-      processarImportacaoNotebookLM();
-    } else {
-      alert('A sua área de transferência está vazia! No NotebookLM, clique em "Copiar Guia de Estudo" ou "Copiar Briefing" antes de clicar aqui.');
-    }
-  } catch (err) {
-    alert('Por favor, pressione Ctrl+V no campo de texto para colar o conteúdo copiado do seu NotebookLM.');
-  }
-}
-
-function gerarWorkspacePorTopico(topicoFornecido) {
-  sounds.playPop();
-  let tema = topicoFornecido;
-  if (!tema) {
-    tema = prompt('Qual é o assunto ou título deste estudo? (Ex: Segredos do Universo, Robôs do Futuro, Vida nos Oceanos, Corpo Humano):');
-  }
-  if (!tema || tema.trim().length === 0) return;
-
-  const urlInput = document.getElementById('notebooklm-url-input').value.trim();
-  const ws = extrairMaterialCompleto(urlInput, '', tema.trim());
-  
-  window.WORKSPACES_DATA.unshift(ws);
-  window.salvarWorkspaces(window.WORKSPACES_DATA);
-
-  fecharModalNotebookLM();
-  sounds.playFanfare();
-  confetti.burst(140);
-  abrirApresentacao(ws);
-}
-
-/**
- * Função principal que consome a URL diretamente, busca todos os dados
- * e cria o workspace com apresentação, vídeos, quizzes, infográficos e testes!
- */
-async function processarImportacaoNotebookLM() {
-  const urlInput = document.getElementById('notebooklm-url-input').value.trim();
-  const manualText = document.getElementById('notebooklm-content-input').value.trim();
-
-  if (!urlInput && !manualText) {
+  if (!urlInput && !topicInput && !manualText) {
     sounds.playWrong();
-    alert('Por favor, insira a URL do seu workspace ou cole os materiais gerados.');
+    alert('Por favor, informe a URL do NotebookLM, o assunto do estudo ou cole o texto do guia.');
     return;
   }
 
-  const progBox = document.getElementById('notebooklm-progress-box');
-  const progBar = document.getElementById('notebooklm-progress-bar');
-  const progStatus = document.getElementById('notebooklm-progress-status');
-  const authBox = document.getElementById('notebooklm-auth-helper-box');
+  const progBox = document.getElementById('ed-progress-box');
+  const progBar = document.getElementById('ed-progress-bar');
+  const progStatus = document.getElementById('ed-progress-status');
 
-  if (authBox) authBox.style.display = 'none';
   progBox.style.display = 'block';
   progBar.style.width = '20%';
-  progStatus.innerHTML = '📡 Conectando ao Workspace e buscando dados...';
+  progStatus.innerHTML = '📡 Conectando ao material...';
   sounds.playPop();
 
   try {
-    let rawContent = manualText;
-    let fetchedTitle = '';
-    let isGoogleProtected = false;
+    let ws = null;
 
-    // Se houver uma URL fornecida, busca o conteúdo real via backend ou proxy
-    if (urlInput) {
-      progBar.style.width = '45%';
-      progStatus.innerHTML = `📥 Baixando materiais gerados em <strong>${urlInput.substring(0, 35)}...</strong>`;
+    // Se tiver chave do Gemini configurada, gera módulo de alta qualidade via API
+    if (apiKey && apiKey.length > 10) {
+      progBar.style.width = '50%';
+      progStatus.innerHTML = '🤖 Chamando a API do Gemini 2.0 Flash para estruturar o estudo infantil...';
+      
+      ws = await gerarComGeminiAPI(apiKey, topicInput, urlInput, manualText);
+    } else {
+      // Fallback sem chave: faz busca de URL ou sintetiza via motor local
+      let rawContent = manualText;
+      let fetchedTitle = topicInput;
 
-      try {
-        const fetchedData = await buscarConteudoDaUrl(urlInput);
-        if (fetchedData) {
-          if (fetchedData.isGoogleAuth) {
-            isGoogleProtected = true;
-          } else if (fetchedData.content) {
+      if (urlInput) {
+        progBar.style.width = '45%';
+        progStatus.innerHTML = `📥 Baixando materiais em <strong>${urlInput.substring(0, 35)}...</strong>`;
+        try {
+          const fetchedData = await buscarConteudoDaUrl(urlInput);
+          if (fetchedData && fetchedData.content) {
             rawContent = (rawContent ? rawContent + '\n\n' : '') + fetchedData.content;
-            fetchedTitle = fetchedData.title || '';
+            if (!fetchedTitle) fetchedTitle = fetchedData.title || '';
           }
-        }
-      } catch (fetchErr) {
-        console.warn('Aviso: busca remota da URL retornou aviso, utilizando parser inteligente.', fetchErr);
+        } catch (e) {}
       }
+
+      progBar.style.width = '75%';
+      progStatus.innerHTML = '🧠 Estruturando infográficos, quiz, flashcards e apresentação...';
+      await new Promise(r => setTimeout(r, 400));
+
+      ws = extrairMaterialCompleto(urlInput, rawContent, fetchedTitle || topicInput);
     }
-
-    // Se o Google bloqueou o acesso por exigir login e não há texto manual colado
-    if (isGoogleProtected && !rawContent) {
-      progBox.style.display = 'none';
-      if (authBox) authBox.style.display = 'block';
-      sounds.playWrong();
-      falarTexto('Hehehe! O Google protegeu este notebook com a sua conta. Copie o Guia de Estudo no NotebookLM e clique no botão verde para eu colar e gerar!');
-      return;
-    }
-
-    progBar.style.width = '75%';
-    progStatus.innerHTML = '🧠 Extraindo vídeos, infográficos, testes, quizzes e curiosidades...';
-
-    await new Promise(r => setTimeout(r, 400));
-
-    // Extrai todo o material gerado e sintetiza a estrutura rica do Calisto
-    const ws = extrairMaterialCompleto(urlInput, rawContent, fetchedTitle);
 
     progBar.style.width = '100%';
-    progStatus.innerHTML = '✨ Apresentação e Sala de Estudos criadas com sucesso!';
-
+    progStatus.innerHTML = '✨ Workspace criado com sucesso!';
     await new Promise(r => setTimeout(r, 300));
 
-    // Insere o novo workspace no início da lista
+    // Adiciona ao topo da lista
     window.WORKSPACES_DATA.unshift(ws);
     window.salvarWorkspaces(window.WORKSPACES_DATA);
 
-    fecharModalNotebookLM();
+    // Atualiza a tela
+    renderizarGridWorkspaces();
+    renderizarListaWorkspacesEducador();
+
+    fecharModalEducador();
+    progBox.style.display = 'none';
     sounds.playFanfare();
     confetti.burst(140);
 
@@ -1146,97 +1245,112 @@ async function processarImportacaoNotebookLM() {
   } catch (err) {
     sounds.playWrong();
     progBox.style.display = 'none';
-    alert('Erro ao processar e consumir materiais do workspace: ' + err.message);
+    alert('Erro ao gerar workspace: ' + err.message);
   }
 }
 
 /**
- * Busca conteúdo via backend local (/api/fetch-workspace) ou proxies públicos
+ * Chamada à API Oficial do Google Gemini para estruturar o módulo infantil
  */
-async function buscarConteudoDaUrl(url) {
-  // 1. Tenta endpoint do servidor local
-  try {
-    const res = await fetch(`/api/fetch-workspace?url=${encodeURIComponent(url)}`, { method: 'GET' });
-    if (res.ok) {
-      const json = await res.json();
-      if (json.isGoogleAuth) {
-        return { isGoogleAuth: true, title: '', content: '' };
+async function gerarComGeminiAPI(apiKey, tema, url, texto) {
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const prompt = `Você é o educador assistente do sábio periquito Calisto para uma plataforma infantil de estudos.
+Com base nas seguintes informações de estudo fornecidas:
+Tema: "${tema || ''}"
+URL / Link: "${url || ''}"
+Material / Notas / Guia do NotebookLM:
+"${(texto || tema || 'Ciência e Descobertas').substring(0, 5000)}"
+
+Gere um módulo educacional completo para crianças em formato JSON EXATO (sem markdown extra, apenas o objeto JSON puro):
+{
+  "titulo": "Título cativante para crianças",
+  "icone": "Ícone emoji temático (ex: 🚀, 🌊, 🤖, 🦖)",
+  "subtitulo": "Subtítulo empolgante",
+  "cor": "linear-gradient(135deg, #1E40AF, #7C3AED)",
+  "videoUrl": "URL do embed do youtube ou deixe vazio",
+  "resumo": "Explicação em 2 frases simples com linguagem infantil acolhedora.",
+  "topicos": [
+    "Ponto 1 claro e interessante",
+    "Ponto 2 com analogia do dia a dia",
+    "Ponto 3 surpreendente",
+    "Ponto 4 dica do sábio Calisto"
+  ],
+  "infograficos": [
+    {
+      "titulo": "Mapa Visual do Tema",
+      "subtitulo": "Passo a passo visual",
+      "itens": [
+        { "numero": "1", "icone": "🔍", "titulo": "Etapa 1", "descricao": "Descrição clara" },
+        { "numero": "2", "icone": "💡", "titulo": "Etapa 2", "descricao": "Descrição clara" },
+        { "numero": "3", "icone": "🚀", "titulo": "Etapa 3", "descricao": "Descrição clara" }
+      ],
+      "estatisticaDestaque": {
+        "valor": "100%",
+        "rotulo": "de curiosidade e aprendizado!"
       }
-      if (json.success && json.body) {
-        return parseHtmlOrTextResponse(json.body, url);
+    }
+  ],
+  "curiosidades": [
+    "Curiosidade 1 fascinante com emoji",
+    "Curiosidade 2 que pouca gente sabe"
+  ],
+  "flashcards": [
+    { "pergunta": "Pergunta intrigante para a criança?", "resposta": "Resposta mágica e clara!" },
+    { "pergunta": "Outra pergunta sobre o tema?", "resposta": "Explicação divertida!" }
+  ],
+  "quiz": [
+    {
+      "pergunta": "Pergunta de fixação número 1?",
+      "opcoes": ["Opção A correta", "Opção B incorreta", "Opção C incorreta", "Opção D incorreta"],
+      "respostaCorreta": 0,
+      "explicacao": "Explicação alegre do sábio Calisto parabenizando!"
+    },
+    {
+      "pergunta": "Pergunta de fixação número 2?",
+      "opcoes": ["Opção A incorreta", "Opção B correta", "Opção C incorreta", "Opção D incorreta"],
+      "respostaCorreta": 1,
+      "explicacao": "Explicação do sábio Calisto!"
+    }
+  ]
+}`;
+
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.4
       }
-    }
-  } catch (e) {
-    // Continua para o fallback de proxy público
+    })
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Erro na API do Gemini (${res.status}): ${errorBody}`);
   }
 
-  // 2. Fallback via AllOrigins CORS proxy
-  try {
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    if (res.ok) {
-      const text = await res.text();
-      return parseHtmlOrTextResponse(text, url);
-    }
-  } catch (e) {
-    // Continua para o fallback
+  const resJson = await res.json();
+  const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) throw new Error('A API do Gemini não retornou conteúdo.');
+
+  const parsed = JSON.parse(rawText);
+
+  // Define metadados do workspace
+  parsed.id = 'nlm_' + Date.now();
+  parsed.isNotebookLM = true;
+  parsed.notebookUrl = url || '';
+  if (!parsed.cor) parsed.cor = 'linear-gradient(135deg, #1E40AF, #7C3AED)';
+  if (!parsed.videoUrl) {
+    parsed.videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
   }
 
-  // 3. Fallback via Corsproxy.io
-  try {
-    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    if (res.ok) {
-      const text = await res.text();
-      return parseHtmlOrTextResponse(text, url);
-    }
-  } catch (e) {}
+  // Gera os slides de apresentação 3D
+  parsed.slides = window.gerarSlidesParaWorkspace(parsed);
 
-  // Se for preset cadastrado, busca do preset
-  const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => p.url.toLowerCase() === url.toLowerCase() || (url.includes('robotica') && p.url.includes('robotica')) || (url.includes('coral') && p.url.includes('coral')) || (url.includes('astronomia') && p.url.includes('astronomia')));
-  if (preset) {
-    return { title: preset.nome, content: preset.rawContent };
-  }
-
-  return { title: '', content: '' };
-}
-
-function parseHtmlOrTextResponse(rawHtml, url) {
-  if (typeof rawHtml !== 'string') {
-    return { title: '', content: '' };
-  }
-
-  // Detecção precoce de tela de login do Google
-  if (rawHtml.includes('accounts.google.com') ||
-      rawHtml.includes('ServiceLogin') ||
-      rawHtml.includes('InteractiveLogin') ||
-      rawHtml.includes('identifierId') ||
-      rawHtml.includes('Sign in - Google') ||
-      rawHtml.includes('Fazer login nas Contas do Google')) {
-    return { isGoogleAuth: true, title: '', content: '' };
-  }
-
-  if (!rawHtml.includes('<html') && !rawHtml.includes('<body')) {
-    return { title: '', content: rawHtml };
-  }
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(rawHtml, 'text/html');
-
-  // Remove scripts, estilos e navegação
-  doc.querySelectorAll('script, style, noscript, nav, footer, header, svg').forEach(el => el.remove());
-
-  const title = doc.querySelector('title')?.innerText || doc.querySelector('h1')?.innerText || '';
-  if (/Fazer login|Sign in/i.test(title)) {
-    return { isGoogleAuth: true, title: '', content: '' };
-  }
-
-  const mainContent = doc.querySelector('main, article, #content, .content, body')?.innerText || doc.body.innerText || '';
-
-  return {
-    title: title.replace(/ - NotebookLM| - Google/gi, '').trim(),
-    content: mainContent.substring(0, 8000)
-  };
+  return parsed;
 }
 
 /**
@@ -1639,21 +1753,6 @@ function concluirWorkspace() {
   falarTexto(`Hehehe! Vitória, ${nome}! Pelos meus cem anos de penas, nunca vi aluno tão dedicado! Parabéns!`);
 }
 
-// ====================================================================
-// MODAL DO EDUCADOR
-// ====================================================================
-function abrirModalEducador() {
-  sounds.playPop();
-  const modal = document.getElementById('educator-modal');
-  const textarea = document.getElementById('json-editor-input');
-  textarea.value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
-  modal.classList.add('open');
-}
-
-function fecharModalEducador() {
-  document.getElementById('educator-modal').classList.remove('open');
-}
-
 function salvarDadosEducador() {
   const textarea = document.getElementById('json-editor-input');
   try {
@@ -1664,24 +1763,18 @@ function salvarDadosEducador() {
     window.salvarWorkspaces(parsed);
     sounds.playCorrect();
     confetti.burst(50);
-    alert('✅ Sucesso! Os 10 Workspaces foram atualizados!');
-    fecharModalEducador();
+    alert('✅ Sucesso! Os Workspaces foram atualizados!');
     renderizarGridWorkspaces();
+    renderizarListaWorkspacesEducador();
   } catch (err) {
     sounds.playWrong();
     alert('❌ Erro no formato JSON: ' + err.message);
   }
 }
 
-function restaurarPadroesEducador() {
-  if (confirm('Deseja realmente restaurar os 10 temas educativos originais do Calisto?')) {
-    window.WORKSPACES_DATA = window.restaurarWorkspacesPadrao();
-    sounds.playPop();
-    document.getElementById('json-editor-input').value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
-    renderizarGridWorkspaces();
-    alert('↺ Padrões restaurados com sucesso!');
-  }
-}
+// Expõe métodos essenciais no escopo global para formulários
+window.validarPinEducador = validarPinEducador;
+window.salvarNovoPinEducador = salvarNovoPinEducador;
 
 // ====================================================================
 // INICIALIZAÇÃO DOS EVENTOS & 3D (COM TRATAMENTO DE ERROS ROBUSTO)
@@ -1699,6 +1792,7 @@ document.addEventListener('DOMContentLoaded', () => {
   atualizarEstatisticas();
   renderizarGridWorkspaces();
   verificarNomeCrianca();
+  atualizarStatusGeminiKey();
 
   if (window.initParrot3D) {
     setTimeout(window.initParrot3D, 150);
@@ -1786,54 +1880,48 @@ document.addEventListener('DOMContentLoaded', () => {
     fecharWorkspace();
   });
 
-  // Central do Educador
+  // Central do Educador & Autenticação PIN
   safeBind('btn-open-educator', 'click', abrirModalEducador);
+  safeBind('btn-close-pin-modal', 'click', fecharModalPin);
+  safeBind('btn-cancel-pin', 'click', fecharModalPin);
   safeBind('btn-close-educator', 'click', fecharModalEducador);
+  safeBind('btn-educator-lock', 'click', bloquearEducador);
+  safeBind('btn-reset-defaults-ed', 'click', restaurarPadroesEducador);
   safeBind('btn-save-json', 'click', salvarDadosEducador);
-  safeBind('btn-reset-defaults', 'click', restaurarPadroesEducador);
 
-  // Importador do Google NotebookLM
-  safeBind('btn-open-notebooklm', 'click', abrirModalNotebookLM);
-  safeBind('btn-hero-import-notebooklm', 'click', abrirModalNotebookLM);
-  safeBind('btn-quick-notebooklm', 'click', abrirModalNotebookLM);
-  safeBind('btn-close-notebooklm', 'click', fecharModalNotebookLM);
-  safeBind('btn-cancel-notebooklm', 'click', fecharModalNotebookLM);
-  safeBind('btn-preset-robotics', 'click', () => carregarPresetNotebookLM(0));
-  safeBind('btn-preset-coral', 'click', () => carregarPresetNotebookLM(1));
-  safeBind('btn-preset-astronomy', 'click', () => carregarPresetNotebookLM(2));
-  safeBind('notebooklm-file-input', 'change', carregarArquivoNotebookLM);
-  safeBind('btn-generate-notebooklm', 'click', processarImportacaoNotebookLM);
-
-  // Botões de Colar Rápido e Assistente de Autenticação do Google
-  safeBind('btn-nlm-paste-url', 'click', colarDoClipboardNaUrl);
-  safeBind('btn-nlm-paste-text', 'click', colarDoClipboardNoTexto);
-  safeBind('btn-auth-paste-generate', 'click', colarClipboardEGerar);
-  safeBind('btn-auth-topic-generate', 'click', () => gerarWorkspacePorTopico());
-
-  // Abas do Modal NotebookLM
-  safeBind('btn-nlm-tab-url', 'click', () => {
-    sounds.playPop();
-    const tabUrl = document.getElementById('btn-nlm-tab-url');
-    const tabManual = document.getElementById('btn-nlm-tab-manual');
-    const viewUrl = document.getElementById('nlm-view-url');
-    const viewManual = document.getElementById('nlm-view-manual');
-    if (tabUrl) tabUrl.classList.add('active');
-    if (tabManual) tabManual.classList.remove('active');
-    if (viewUrl) viewUrl.style.display = 'block';
-    if (viewManual) viewManual.style.display = 'none';
+  // Botão "➕ Incluir Novo Workspace" (vai para a aba de importação)
+  safeBind('btn-ed-goto-import', 'click', () => {
+    document.querySelectorAll('.educator-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.ed-tab-content').forEach(c => c.style.display = 'none');
+    const importBtn = document.querySelector('.educator-tab-btn[data-ed-tab="ed-tab-import"]');
+    if (importBtn) importBtn.classList.add('active');
+    const importView = document.getElementById('ed-tab-import');
+    if (importView) importView.style.display = 'block';
   });
 
-  safeBind('btn-nlm-tab-manual', 'click', () => {
-    sounds.playPop();
-    const tabUrl = document.getElementById('btn-nlm-tab-url');
-    const tabManual = document.getElementById('btn-nlm-tab-manual');
-    const viewUrl = document.getElementById('nlm-view-url');
-    const viewManual = document.getElementById('nlm-view-manual');
-    if (tabManual) tabManual.classList.add('active');
-    if (tabUrl) tabUrl.classList.remove('active');
-    if (viewManual) viewManual.style.display = 'block';
-    if (viewUrl) viewUrl.style.display = 'none';
+  // Gestão da Chave Gemini
+  safeBind('btn-save-gemini-key', 'click', salvarChaveGemini);
+
+  // Importador no Modo Educador
+  safeBind('btn-ed-paste-url', 'click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) document.getElementById('ed-notebooklm-url-input').value = text.trim();
+    } catch (e) {}
   });
+
+  safeBind('btn-ed-paste-guide', 'click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) document.getElementById('ed-manual-content-input').value = text;
+    } catch (e) {}
+  });
+
+  safeBind('btn-ed-preset-robotics', 'click', () => carregarPresetEducador(0));
+  safeBind('btn-ed-preset-coral', 'click', () => carregarPresetEducador(1));
+  safeBind('btn-ed-preset-astronomy', 'click', () => carregarPresetEducador(2));
+  safeBind('ed-notebooklm-file-input', 'change', carregarArquivoEducador);
+  safeBind('btn-ed-generate-workspace', 'click', processarGeracaoEducador);
 
   // Modo Apresentação do Calisto
   safeBind('btn-pres-back', 'click', fecharApresentacao);
@@ -1865,13 +1953,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Abas do Painel do Educador
   document.querySelectorAll('.educator-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.educator-tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.ed-tab-content').forEach(c => c.style.display = 'none');
       btn.classList.add('active');
       const target = document.getElementById(btn.dataset.edTab);
-      if (target) target.style.display = 'block';
+      if (target) {
+        target.style.display = 'block';
+        if (btn.dataset.edTab === 'ed-tab-json') {
+          const textarea = document.getElementById('json-editor-input');
+          if (textarea) textarea.value = JSON.stringify(window.WORKSPACES_DATA, null, 2);
+        } else if (btn.dataset.edTab === 'ed-tab-workspaces') {
+          renderizarListaWorkspacesEducador();
+        }
+      }
     });
   });
 
