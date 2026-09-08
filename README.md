@@ -12,12 +12,20 @@ Uma plataforma web interativa, responsiva e divertida criada especialmente para 
   - Fala em voz alta em português com tom masculino envelhecido/rachado de bruxo ágil.
   - Grasnadinho curto autêntico de 0.4s gravado de um Ringneck real (*Psittacula krameri*).
   - Voo livre interativo pela tela sem sair do enquadramento.
-- 🗂️ **10 Workspaces de Conteúdo**: Pré-populados com temas educativos (Sistema Solar, Dinossauros, Plantas, Oceano, Matemática, Corpo Humano, Invenções, Clima, Animais e Histórias).
-- 📺 **Vídeos Explicativos**: Player integrado para cada um dos 10 módulos.
+- 🎬 **Modo Apresentação do Calisto (Slideshow 3D Guiado)**:
+  - Apresentador Calisto 3D no palco interagindo com os slides.
+  - Narração automática por voz dos slides, modo Auto-Play, destaques e notas do orador.
+  - Navegação por teclado (← / → / Espaço) e bolinhas interativas.
+- 🔗 **Importador Inteligente do Google NotebookLM**:
+  - Aceita URL do projeto do NotebookLM (`https://notebooklm.google.com/notebook/...`).
+  - Converte automaticamente Guias de Estudo, Resumos de Briefing, FAQs, Linhas do Tempo e Áudio Overviews em Apresentações completas com Flashcards e Quiz.
+  - Presets instantâneos para teste (Robótica & IA, Recifes de Coral).
+- 🗂️ **Workspaces de Conteúdo**: Pré-populados com temas educativos ou gerados a partir do seu NotebookLM.
+- 📺 **Cinema & Conteúdo**: Vídeos e players de áudio integrados.
 - 🃏 **Cartões Mágicos (Flashcards 3D)**: Cartões giratórios com efeito 3D para fixação da memória.
 - 🏆 **Missão Desafio (Quiz Gamificado)**: Vidas/corações, estrelas, pontuação e chuva de confetes nas respostas corretas.
-- ⚙️ **Modo Educador**: Permite editar os 10 workspaces direto no navegador ou colar conteúdos gerados pelo seu **Gemini Notebook**.
-- 🌐 **100% Gratuito**: Sem custos de hospedagem nem de APIs pagas.
+- ⚙️ **Modo Educador**: Permite editar os workspaces direto no navegador ou colar conteúdos gerados.
+- 🌐 **100% Gratuito & Serverless**: Roda no GitHub Pages sem custos.
 
 ---
 

@@ -56,8 +56,11 @@
         </div>
       </div>
 
-      <!-- Ações: Chamar Calisto, Som & Modo Educador -->
+      <!-- Ações: Importar NotebookLM, Chamar Calisto, Som & Modo Educador -->
       <div class="header-actions">
+        <button id="btn-open-notebooklm" class="icon-action-btn notebooklm-header-btn" title="Importar projeto do Google NotebookLM e gerar apresentação">
+          🔗 Importar NotebookLM
+        </button>
         <button id="btn-summon-calisto" class="icon-action-btn" title="Chamar o Calisto para cá!">
           🦜 Chamar Calisto
         </button>
@@ -70,7 +73,7 @@
       </div>
     </header>
 
-    <!-- TELA 1: HUB DE SELEÇÃO DOS 10 WORKSPACES -->
+    <!-- TELA 1: HUB DE SELEÇÃO DOS WORKSPACES -->
     <main id="hub-view">
       <!-- Banner de Boas-Vindas com o Calisto -->
       <section class="mascot-hero-card">
@@ -81,9 +84,12 @@
         <div class="mascot-hero-content">
           <h1>Olá, <span id="hero-child-name" class="highlight">Pequeno Explorador</span>! 👋</h1>
           <div class="speech-bubble" id="hub-greeting-text">
-            Hehehe! Eu sou o sábio <strong>Calisto</strong>! Escolha um dos 10 mundos do saber abaixo para assistir ao vídeo, virar cartões mágicos e acertar o quiz comigo! 🌟
+            Hehehe! Eu sou o sábio <strong>Calisto</strong>! Agora você pode colar uma <strong>URL ou materiais do seu NotebookLM</strong> para eu montar uma apresentação 3D completa, ou escolher um dos mundos abaixo para aprender comigo! 🌟
           </div>
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button id="btn-hero-import-notebooklm" class="speak-btn" style="background: linear-gradient(135deg, #2563EB, #7C3AED); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);">
+              🔗 Importar Projeto do NotebookLM
+            </button>
             <button id="btn-speak-greeting" class="speak-btn">
               🔊 Ouvir o Calisto Falar
             </button>
@@ -94,20 +100,134 @@
         </div>
       </section>
 
-      <!-- Grade dos 10 Workspaces -->
+      <!-- Grade dos Workspaces -->
       <section>
         <div class="section-heading">
-          <h2>🗺️ Escolha o seu Workspace de Estudo</h2>
-          <span class="section-tag" id="workspace-count-tag">10 Temas Prontos</span>
+          <h2>🗺️ Escolha o seu Workspace de Estudo & Apresentação</h2>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button id="btn-quick-notebooklm" class="mini-tag-btn" title="Adicionar novo do NotebookLM">
+              ➕ Novo do NotebookLM
+            </button>
+            <span class="section-tag" id="workspace-count-tag">10 Temas Disponíveis</span>
+          </div>
         </div>
 
         <div class="workspaces-grid" id="workspaces-grid-container">
-          <!-- Os 10 cartões são gerados dinamicamente pelo JavaScript -->
+          <!-- Os cartões são gerados dinamicamente pelo JavaScript -->
         </div>
       </section>
     </main>
 
-    <!-- TELA 2: SALA DE ESTUDOS DO WORKSPACE SELECIONADO -->
+    <!-- TELA 2: MODO APRESENTAÇÃO DO CALISTO 3D (NOVA EXPERIÊNCIA DE CONSUMO) -->
+    <section id="presentation-view" class="presentation-stage-container">
+      <div class="presentation-header">
+        <button id="btn-pres-back" class="back-btn">
+          ⬅️ Voltar aos Temas
+        </button>
+        <div class="presentation-title-info">
+          <span class="pres-badge" id="pres-source-badge">🦜 Apresentação do Calisto</span>
+          <h2 id="pres-workspace-title">Título da Apresentação</h2>
+        </div>
+        <div class="presentation-top-actions">
+          <button id="btn-pres-autoplay" class="pres-control-btn" title="Reprodução automática com voz">
+            ▶️ Auto-Play
+          </button>
+          <button id="btn-pres-speak" class="pres-control-btn" title="Ouvir a narração do Calisto">
+            🔊 Narrar Slide
+          </button>
+          <button id="btn-pres-to-study" class="pres-control-btn highlight-btn" title="Ir para a Sala de Estudos com Quiz">
+            📚 Sala de Estudos & Quiz
+          </button>
+        </div>
+      </div>
+
+      <!-- Palco Widescreen de Apresentação -->
+      <div class="presentation-stage" id="presentation-stage-box">
+        <!-- Mascote 3D Orador no Palco -->
+        <div class="presentation-mascot-podium">
+          <div id="calisto-presentation-3d" class="calisto-presenter-canvas-box"></div>
+          <div class="presenter-tag">
+            <span class="sound-wave-dot"></span>
+            <strong>Calisto Apresentador</strong>
+          </div>
+        </div>
+
+        <!-- Slide Atual -->
+        <div class="presentation-slide-card" id="presentation-slide-card">
+          <div class="slide-header-meta">
+            <span class="slide-index-pill" id="pres-slide-pill">Slide 1 de 6 ⭐</span>
+            <span class="slide-type-pill" id="pres-slide-type">🌟 Introdução</span>
+          </div>
+
+          <div class="slide-main-content">
+            <div class="slide-title-row">
+              <span class="slide-big-icon" id="pres-slide-icon">🚀</span>
+              <div>
+                <h3 class="slide-title" id="pres-slide-title">Título do Slide</h3>
+                <p class="slide-subtitle" id="pres-slide-sub">Subtítulo explicativo do slide</p>
+              </div>
+            </div>
+
+            <!-- Caixa de Destaque / Resumo do Slide -->
+            <div class="slide-highlight-card" id="pres-slide-highlight-card">
+              <p id="pres-slide-highlight-text">Destaque do slide aqui...</p>
+            </div>
+
+            <!-- Tópicos ou Conteúdo Específico do Slide -->
+            <div class="slide-dynamic-body" id="pres-slide-dynamic-body">
+              <ul class="slide-bullets-list" id="pres-slide-bullets">
+                <!-- Tópicos inseridos via JavaScript -->
+              </ul>
+            </div>
+
+            <!-- Caixa de Desafio / Flashcard Interativo no Slide (Opcional) -->
+            <div class="slide-interactive-box" id="pres-slide-interactive-box" style="display: none;">
+              <div class="interactive-question" id="pres-interactive-q">Pergunta do desafio?</div>
+              <button id="btn-pres-reveal-answer" class="reveal-btn">💡 Revelar Resposta do Calisto</button>
+              <div class="interactive-answer" id="pres-interactive-a" style="display: none;">Resposta mágica!</div>
+            </div>
+
+            <!-- Player de Áudio do NotebookLM (Opcional no Slide de Áudio) -->
+            <div class="slide-audio-box" id="pres-slide-audio-box" style="display: none;">
+              <div class="audio-box-info">
+                <span>🎙️ <strong>Áudio Overview do NotebookLM</strong></span>
+                <p style="font-size: 0.9rem; color: #475569; margin-top: 0.25rem;">Ouça a conversa gerada pelo NotebookLM ou clique no botão de voz do Calisto!</p>
+              </div>
+              <audio id="pres-audio-player" controls style="width: 100%; margin-top: 0.5rem;"></audio>
+            </div>
+          </div>
+
+          <!-- Fala e Notas do Apresentador Calisto -->
+          <div class="slide-speaker-notes">
+            <div class="speaker-notes-header">
+              <span>🦜 <strong>Fala do Calisto:</strong></span>
+              <span class="speaking-indicator" id="pres-speaking-anim" style="display: none;">🗣️ Falando...</span>
+            </div>
+            <div class="speaker-speech-text" id="pres-speaker-speech">
+              Hehehe! Prestem bastante atenção neste ponto, pequenos cientistas!
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Controle de Navegação dos Slides -->
+      <div class="presentation-bottom-nav">
+        <button id="btn-pres-prev" class="pres-nav-btn">
+          ⬅️ Slide Anterior
+        </button>
+        
+        <!-- Indicadores de Slides (Bolinhas interativas) -->
+        <div class="pres-dots-wrapper" id="pres-dots-container">
+          <!-- Gerados dinamicamente -->
+        </div>
+
+        <button id="btn-pres-next" class="pres-nav-btn primary">
+          Próximo Slide ➡️
+        </button>
+      </div>
+    </section>
+
+    <!-- TELA 3: SALA DE ESTUDOS DO WORKSPACE (VÍDEO/ÁUDIO, FLASHCARDS & QUIZ) -->
     <section id="study-view" class="study-room">
       <div class="study-header">
         <button id="btn-back-hub" class="back-btn">
@@ -120,8 +240,13 @@
             <p id="current-workspace-sub" style="color: #64748B; font-size: 0.95rem;">Subtítulo explicativo</p>
           </div>
         </div>
-        <div class="stat-pill" style="background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
-          <span>🎯</span> <span id="study-progress-tag">Módulo Ativo</span>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button id="btn-switch-to-presentation" class="icon-action-btn highlight-btn" title="Assistir como Apresentação de Slides">
+            🎬 Ver Apresentação 3D
+          </button>
+          <div class="stat-pill" style="background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
+            <span>🎯</span> <span id="study-progress-tag">Módulo Ativo</span>
+          </div>
         </div>
       </div>
 
@@ -131,7 +256,7 @@
           <!-- Abas de Atividades -->
           <nav class="study-tabs">
             <button class="tab-btn active" data-tab="tab-video" id="tab-btn-video">
-              📺 Cinema do Calisto
+              📺 Cinema & Conteúdo
             </button>
             <button class="tab-btn" data-tab="tab-flashcards" id="tab-btn-flashcards">
               🃏 Cartões Mágicos
@@ -140,15 +265,23 @@
               🏆 Missão Desafio
             </button>
             <button class="tab-btn" data-tab="tab-curiosities" id="tab-btn-curiosities">
-              💡 Curiosidades
+              💡 Curiosidades & Notas
             </button>
           </nav>
 
-          <!-- ABA 1: VÍDEO EXPLICATIVO & RESUMO -->
+          <!-- ABA 1: VÍDEO / ÁUDIO EXPLICATIVO & RESUMO -->
           <div class="tab-pane active" id="tab-video">
-            <div class="video-container">
+            <div class="video-container" id="study-video-wrapper">
               <iframe id="study-video-frame" src="" title="Vídeo Explicativo do Conteúdo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
+            
+            <!-- Player de Áudio Alternativo (quando não houver vídeo) -->
+            <div id="study-audio-overview-card" class="summary-card" style="display: none; background: #F0FDF4; border-color: #BBF7D0; margin-bottom: 1.5rem;">
+              <h3 style="color: #166534;">🎙️ Áudio Overview do NotebookLM:</h3>
+              <p style="color: #374151; margin-bottom: 0.75rem;">Ouça a explicação em áudio gerada diretamente no seu projeto do NotebookLM!</p>
+              <audio id="study-audio-element" controls style="width: 100%;"></audio>
+            </div>
+
             <div class="summary-card">
               <h3>📖 O que vamos aprender:</h3>
               <p id="study-summary-text" style="font-size: 1.1rem; margin-bottom: 1rem; color: #334155; font-weight: 600;"></p>
@@ -227,7 +360,7 @@
           <div class="paco-3d-hint" style="margin-bottom: 0.75rem;">👆 Calisto</div>
           <h3 class="paco-name">Calisto 🦜</h3>
           <div class="paco-speech-bubble" id="paco-study-speech">
-            Vamos aprender juntos! Assista ao vídeo ou clique nos cartões mágicos para treinar sua memória!
+            Vamos aprender juntos! Assista à apresentação, veja o vídeo ou clique nos cartões mágicos para treinar sua memória!
           </div>
           <button id="btn-paco-speak" class="paco-voice-btn">
             🔊 Ouvir o Calisto Falar
@@ -282,7 +415,71 @@
     </div>
   </div>
 
-  <!-- MODAL 3: MODO EDUCADOR & PERSONALIZAÇÃO -->
+  <!-- MODAL 3: IMPORTADOR INTELIGENTE DO GOOGLE NOTEBOOKLM (NOVO!) -->
+  <div class="modal-overlay" id="notebooklm-modal">
+    <div class="modal-content" style="max-width: 720px;">
+      <button class="modal-close-btn" id="btn-close-notebooklm">&times;</button>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <span style="font-size: 2rem;">🔗</span>
+        <div>
+          <h2 style="font-family: var(--font-display); font-size: 1.6rem; color: #1E40AF; margin: 0;">
+            Importar Projeto do Google NotebookLM
+          </h2>
+          <p style="color: #64748B; font-size: 0.95rem; margin: 0;">
+            O Calisto transformará seus materiais em uma <strong>Apresentação 3D, Flashcards e Quiz</strong>!
+          </p>
+        </div>
+      </div>
+
+      <div class="notebooklm-importer-box">
+        <!-- Campo 1: URL do NotebookLM -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label for="notebooklm-url-input" style="font-weight: 700; color: #1E293B; display: block; margin-bottom: 0.35rem;">
+            🌐 URL do seu Projeto no NotebookLM:
+          </label>
+          <input type="url" id="notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id-aqui..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 1rem;">
+          <p style="font-size: 0.82rem; color: #64748B; margin-top: 0.3rem;">
+            Cole o link do seu notebook para vincular o projeto ao Calisto.
+          </p>
+        </div>
+
+        <!-- Seletor de Modelos Prontos para Teste Rápido -->
+        <div style="margin-bottom: 1rem; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 0.75rem;">
+          <label style="font-weight: 700; color: #475569; font-size: 0.88rem; display: block; margin-bottom: 0.4rem;">
+            ⚡ Ou escolha um modelo pronto para testar em 1 segundo:
+          </label>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="preset-btn" id="btn-preset-robotics">🤖 Robótica & Inteligência Artificial</button>
+            <button type="button" class="preset-btn" id="btn-preset-coral">🌊 Recifes de Coral & Oceanos</button>
+          </div>
+        </div>
+
+        <!-- Campo 2: Conteúdos Gerados no Workspace do NotebookLM -->
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label for="notebooklm-content-input" style="font-weight: 700; color: #1E293B;">
+              📝 Itens Produzidos no Workspace (Guia de Estudo, FAQ, Briefing ou Notas):
+            </label>
+            <label class="file-upload-label" title="Carregar arquivo .txt ou .md exportado do NotebookLM">
+              📁 Carregar Arquivo
+              <input type="file" id="notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
+            </label>
+          </div>
+          <textarea id="notebooklm-content-input" class="json-editor-textarea" placeholder="Cole aqui o texto do seu Guia de Estudos, FAQ, Resumo do Briefing ou Notas geradas pelo NotebookLM... O Calisto vai organizar tudo automaticamente!" style="min-height: 180px; font-family: inherit; font-size: 0.92rem;"></textarea>
+        </div>
+
+        <!-- Botão de Ação Principal -->
+        <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+          <button type="button" id="btn-cancel-notebooklm" class="flash-nav-btn">Cancelar</button>
+          <button type="button" id="btn-generate-notebooklm" class="speak-btn" style="background: linear-gradient(135deg, #2563EB, #7C3AED); padding: 0.85rem 1.75rem; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);">
+            ✨ Gerar Apresentação & Sala de Estudos 🦜
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: MODO EDUCADOR & PERSONALIZAÇÃO -->
   <div class="modal-overlay" id="educator-modal">
     <div class="modal-content">
       <button class="modal-close-btn" id="btn-close-educator">&times;</button>
@@ -290,7 +487,7 @@
         ⚙️ Central do Educador & Personalização
       </h2>
       <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.25rem;">
-        Personalize os 10 workspaces com os temas e vídeos do seu <strong>Gemini Notebook</strong> de forma super fácil!
+        Personalize os workspaces com temas, vídeos e slides do seu <strong>NotebookLM ou Gemini</strong> de forma super fácil!
       </p>
 
       <div class="educator-tabs">
@@ -301,7 +498,7 @@
       <!-- Aba do Prompt para o Gemini -->
       <div id="ed-tab-prompt" class="ed-tab-content">
         <p style="font-size: 0.95rem; margin-bottom: 0.75rem; color: #334155;">
-          Copie o prompt abaixo, cole no seu <strong>Gemini Notebook</strong> com seu conteúdo e cole a resposta na aba <em>"Editar Dados"</em>:
+          Copie o prompt abaixo, cole no seu <strong>Gemini ou NotebookLM</strong> com seu conteúdo e cole a resposta na aba <em>"Editar Dados"</em>:
         </p>
         <div class="gemini-prompt-box" id="gemini-prompt-text">
 Por favor, transforme o conteúdo deste workspace de estudo em um módulo infantil para o portal do Periquito Calisto no formato JSON com a seguinte estrutura:

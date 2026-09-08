@@ -398,11 +398,220 @@ const DEFAULT_WORKSPACES = [
   }
 ];
 
+/**
+ * Utilitário para gerar slides ricos e dinâmicos para qualquer workspace
+ */
+function gerarSlidesParaWorkspace(ws) {
+  if (ws.slides && Array.isArray(ws.slides) && ws.slides.length > 0) {
+    return ws.slides;
+  }
+
+  const slides = [];
+
+  // Slide 1: Abertura / Boas-vindas
+  slides.push({
+    id: 1,
+    tipo: 'intro',
+    icone: ws.icone || '🌟',
+    titulo: ws.titulo,
+    subtitulo: ws.subtitulo || 'Uma aventura de conhecimento com o Calisto',
+    falaCalisto: `Hehehe! Olá, pequenos exploradores! Sejam bem-vindos à nossa grande apresentação sobre ${ws.titulo}! Eu sou o sábio Calisto e vou guiar vocês em cada descoberta!`,
+    destaque: `Apresentação especial do módulo: ${ws.titulo}`,
+    topicos: [
+      `Tema do dia: ${ws.titulo}`,
+      `Resumo geral: ${ws.resumo || 'Vamos descobrir mistérios incríveis juntos!'}`,
+      `Mascote Guia: Periquito Ringneck Calisto 🦜`
+    ]
+  });
+
+  // Slide 2: Resumo e Fundamentos
+  slides.push({
+    id: 2,
+    tipo: 'conceito',
+    icone: '📖',
+    titulo: 'Fundamentos & Descobertas',
+    subtitulo: 'O que você precisa saber para começar',
+    falaCalisto: `Vejam só que interessante! ${ws.resumo || 'Cada detalhe aqui foi preparado para despertar sua curiosidade científica!'} Prestem bastante atenção nos pontos principais!`,
+    destaque: ws.resumo || 'Conhecimento é uma aventura mágica!',
+    topicos: (ws.topicos && ws.topicos.length > 0) ? ws.topicos.slice(0, 3) : ['Conceito chave número 1', 'Conceito chave número 2']
+  });
+
+  // Slide 3: Tópicos aprofundados / Linha do tempo
+  if (ws.topicos && ws.topicos.length > 3) {
+    slides.push({
+      id: 3,
+      tipo: 'conceito',
+      icone: '🔍',
+      titulo: 'Explorando Mais a Fundo',
+      subtitulo: 'Detalhes fascinantes do nosso estudo',
+      falaCalisto: `Pelos meus cem anos de penas, aqui estão detalhes que quase ninguém percebe! Olhem só esses outros pontos incríveis!`,
+      destaque: 'Fique atento para o quiz no final!',
+      topicos: ws.topicos.slice(3)
+    });
+  }
+
+  // Slide 4: Áudio Overview / Podcast do NotebookLM
+  if (ws.audioUrl || ws.audioOverviewText) {
+    slides.push({
+      id: slides.length + 1,
+      tipo: 'audio',
+      icone: '🎙️',
+      titulo: 'Áudio Overview do NotebookLM',
+      subtitulo: 'Conversa e explicações sonoras',
+      falaCalisto: `Hehehe! Chegou a hora do nosso Áudio Overview gerado no NotebookLM! Ouça os especialistas conversando e preste atenção aos detalhes!`,
+      destaque: ws.audioOverviewText || 'Ouça o bate-papo explicativo dos especialistas do NotebookLM.',
+      audioUrl: ws.audioUrl || '',
+      topicos: [
+        'Resumo em formato de conversa interativa',
+        'Conexões entre os pontos mais importantes',
+        'Dicas especiais do Calisto para fixar o conteúdo'
+      ]
+    });
+  }
+
+  // Slide 5: Curiosidades
+  if (ws.curiosidades && ws.curiosidades.length > 0) {
+    slides.push({
+      id: slides.length + 1,
+      tipo: 'curiosidade',
+      icone: '💡',
+      titulo: 'Baú de Segredos & Curiosidades',
+      subtitulo: 'Fatos surpreendentes que vão te deixar de bico aberto!',
+      falaCalisto: `Ai minhas penas! Vocês sabiam disso? Olha que curiosidades inacreditáveis eu descobri nos meus livros mágicos!`,
+      destaque: 'Curiosidades de ouro do Calisto!',
+      topicos: ws.curiosidades
+    });
+  }
+
+  // Slide 6: Flashcards / Desafio Rápido
+  if (ws.flashcards && ws.flashcards.length > 0) {
+    const fc = ws.flashcards[0];
+    slides.push({
+      id: slides.length + 1,
+      tipo: 'desafio',
+      icone: '🃏',
+      titulo: 'Desafio Rápido do Calisto',
+      subtitulo: 'Teste sua memória antes do quiz!',
+      falaCalisto: `Hora de testar a cabeça! Pense rápido: ${fc.pergunta}`,
+      destaque: `❓ ${fc.pergunta}`,
+      respostaDestaque: `💡 ${fc.resposta}`,
+      topicos: [
+        'Gire as engrenagens da mente!',
+        'A resposta será revelada ao virar o cartão mágico.',
+        'Pronto para o quiz final?'
+      ]
+    });
+  }
+
+  // Slide 7: Conclusão & Convite ao Quiz
+  slides.push({
+    id: slides.length + 1,
+    tipo: 'conclusao',
+    icone: '🏆',
+    titulo: 'Missão Cumprida na Apresentação!',
+    subtitulo: 'Agora é hora de ganhar estrelas e troféus!',
+    falaCalisto: `Parabéns pela dedicação! Vocês acompanharam toda a apresentação como verdadeiros mestres! Agora vamos para o Quiz e para os Cartões Mágicos para ganhar estrelas e troféus!`,
+    destaque: 'Você completou a apresentação com o Calisto! ⭐⭐⭐',
+    topicos: [
+      'Apresentação 100% concluída!',
+      'Ganhe +3 Estrelas completando a Missão Desafio (Quiz).',
+      'Treine a memória com todos os Cartões Mágicos.'
+    ]
+  });
+
+  return slides;
+}
+
+// Exemplos prontos de exportação do NotebookLM para importação rápida
+const NOTEBOOKLM_PRESETS = [
+  {
+    nome: "🚀 Guia de Estudo: Robótica & Inteligência Artificial Infantil",
+    url: "https://notebooklm.google.com/notebook/robotica-ia-kids",
+    rawContent: `# Guia de Estudo do NotebookLM: O Fantástico Mundo dos Robôs e da IA
+
+## Resumo do Briefing
+Os robôs são máquinas incríveis programadas por seres humanos para realizar tarefas úteis, desde aspirar a sala até explorar planetas distantes como Marte. A Inteligência Artificial (IA) é como o cérebro que ajuda o computador a aprender e tomar boas decisões.
+
+## Tópicos Principais
+- Um robô é composto por sensores (olhos e ouvidos), processador (cérebro) e atuadores (motores e braços).
+- A Inteligência Artificial aprende reconhecendo padrões em muitos dados, assim como uma criança aprende a reconhecer fotos de gatinhos.
+- Existem robôs que ajudam médicos em cirurgias, robôs que constroem carros e robôs que limpam a casa.
+- A regra mais importante da robótica é que robôs devem sempre ajudar e proteger as pessoas e a natureza.
+
+## Curiosidades
+- O primeiro conceito de autômato foi imaginado na Grécia Antiga há mais de 2.000 anos!
+- O robô Perseverance em Marte tem lasers para analisar rochas vermelhas!
+
+## Glossário & Perguntas de Fixação (FAQ)
+- O que é um sensor em um robô? | É como os olhos e ouvidos do robô para sentir o ambiente ao redor!
+- O que é um algoritmo? | É uma receita passo a passo que diz ao computador exatamente o que fazer.
+- Para que serve a IA nos robôs? | Para ajudá-los a reconhecer caminhos, desviar de obstáculos e tomar decisões espertas!
+
+## Questões para Quiz
+1. Qual parte do robô funciona como os "olhos" e "ouvidos" dele?
+A) Bateria
+B) Sensores
+C) Rodas
+D) Tinta
+Correta: B
+Explicação: Os sensores captam luz, sons e toques ao redor do robô!
+
+2. O que é Inteligência Artificial (IA)?
+A) Um brinquedo de madeira
+B) Uma capacidade de computadores aprenderem e resolverem problemas
+C) Um tipo de lâmpada colorida
+D) Uma comida para robôs
+Correta: B
+Explicação: A IA é a tecnologia que permite que máquinas aprendam com exemplos!`
+  },
+  {
+    nome: "🌊 Briefing Doc: O Mistério dos Recifes de Coral & Vida Marinha",
+    url: "https://notebooklm.google.com/notebook/recifes-coral-oceanos",
+    rawContent: `# Documento de Briefing NotebookLM: A Vida Secreta dos Corais e Oceanos
+
+## Resumo do Briefing
+Os recifes de coral são conhecidos como as florestas tropicais dos oceanos. Embora cubram menos de 1% do fundo do mar, abrigam mais de 25% de todas as espécies marinhas do planeta Terra!
+
+## Tópicos Principais
+- Os corais parecem pedras ou plantas, mas na verdade são pequenos animais chamados pólipos.
+- Os corais vivem em parceria com algas microscópicas que lhes dão suas cores brilhantes e alimento através da luz solar.
+- Tartarugas marinhas, peixes-palhaço, polvos e estrelas-do-mar dependem dos corais para morar e se proteger.
+- Cuidar dos oceanos e evitar o plástico nas praias ajuda a manter os corais saudáveis e coloridos.
+
+## Curiosidades
+- A Grande Barreira de Corais na Austrália é tão colossal que pode ser vista do espaço sideral!
+- Os polvos têm três corações e o sangue deles é azulado!
+
+## Glossário & FAQ
+- O que são corais na realidade? | São colônias de pequenos animais marinhos construtores chamados pólipos.
+- Por que os corais perdem a cor quando a água esquenta? | Porque as algas parceiras vão embora quando a água fica muito quente.
+- Quem é o amigo do peixe-palhaço no oceano? | A anêmona-do-mar, que o protege com seus tentáculos mágicos!
+
+## Questões para Quiz
+1. Os corais do oceano são:
+A) Plantas aquáticas
+B) Pequenos animais marinhos chamados pólipos
+C) Rochas sem vida
+D) Pedaços de plástico
+Correta: B
+Explicação: Os corais são animais vivos que formam grandes estruturas marinhas!
+
+2. Quantos corações tem um polvo?
+A) Um coração
+B) Dois corações
+C) Três corações
+D) Nenhum coração
+Correta: C
+Explicação: Os polvos têm três corações incríveis e sangue azul!`
+  }
+];
+
 function carregarWorkspaces() {
   const salvos = localStorage.getItem("CALISTO_CUSTOM_WORKSPACES");
   if (salvos) {
     try {
-      return JSON.parse(salvos);
+      const parsed = JSON.parse(salvos);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch (e) {
       console.warn("Erro ao ler workspaces personalizados, usando os padrões.", e);
     }
@@ -421,5 +630,8 @@ function restaurarWorkspacesPadrao() {
 
 window.WORKSPACES_DATA = carregarWorkspaces();
 window.DEFAULT_WORKSPACES = DEFAULT_WORKSPACES;
+window.NOTEBOOKLM_PRESETS = NOTEBOOKLM_PRESETS;
+window.gerarSlidesParaWorkspace = gerarSlidesParaWorkspace;
 window.salvarWorkspaces = salvarWorkspaces;
 window.restaurarWorkspacesPadrao = restaurarWorkspacesPadrao;
+

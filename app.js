@@ -15,7 +15,10 @@ const AppState = {
   currentFlashcardIdx: 0,
   currentQuizIdx: 0,
   quizLives: 3,
-  quizAnswerLocked: false
+  quizAnswerLocked: false,
+  currentSlideIdx: 0,
+  isAutoPlaying: false,
+  autoPlayTimer: null
 };
 window.AppState = AppState;
 
@@ -451,7 +454,7 @@ function renderizarGridWorkspaces() {
   container.innerHTML = '';
   const data = window.WORKSPACES_DATA || [];
 
-  document.getElementById('workspace-count-tag').textContent = `${data.length} Temas Prontos`;
+  document.getElementById('workspace-count-tag').textContent = `${data.length} Temas Disponíveis`;
 
   data.forEach((ws, index) => {
     const isCompleted = AppState.completedWorkspaces.includes(ws.id);
@@ -460,7 +463,10 @@ function renderizarGridWorkspaces() {
     card.innerHTML = `
       <div class="card-header-bar" style="background: ${ws.cor || 'linear-gradient(135deg, #10B981, #059669)'}">
         <div class="card-icon-circle">${ws.icone || '📖'}</div>
-        <span class="card-badge">Módulo #${index + 1}</span>
+        <div style="display: flex; gap: 0.35rem; align-items: center;">
+          ${ws.isNotebookLM ? '<span class="notebooklm-tag">🏷️ NotebookLM</span>' : ''}
+          <span class="card-badge">#${index + 1}</span>
+        </div>
       </div>
       <div class="card-body">
         <h3 class="card-title">${ws.titulo}</h3>
@@ -469,18 +475,291 @@ function renderizarGridWorkspaces() {
           <span class="card-status">
             ${isCompleted ? '⭐ Concluído!' : '🌱 Pronto para Explorar'}
           </span>
-          <button class="card-start-btn">Entrar ➡️</button>
+        </div>
+        <div class="workspace-actions-row">
+          <button class="ws-action-btn pres" title="Assistir como Apresentação 3D Guiada pelo Calisto">
+            🎬 Apresentação 3D
+          </button>
+          <button class="ws-action-btn study" title="Abrir Sala de Estudos, Flashcards e Quiz">
+            📚 Sala & Quiz
+          </button>
         </div>
       </div>
     `;
 
+    // Botão de Apresentação 3D
+    const btnPres = card.querySelector('.ws-action-btn.pres');
+    if (btnPres) {
+      btnPres.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sounds.playPop();
+        abrirApresentacao(ws);
+      });
+    }
+
+    // Botão de Sala de Estudos
+    const btnStudy = card.querySelector('.ws-action-btn.study');
+    if (btnStudy) {
+      btnStudy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sounds.playPop();
+        abrirWorkspace(ws);
+      });
+    }
+
+    // Clique no corpo do cartão abre a Apresentação
     card.addEventListener('click', () => {
       sounds.playPop();
-      abrirWorkspace(ws);
+      abrirApresentacao(ws);
     });
 
     container.appendChild(card);
   });
+}
+
+// ====================================================================
+// MODO APRESENTAÇÃO DO CALISTO 3D (SLIDESHOW INTERATIVO)
+// ====================================================================
+function abrirApresentacao(ws) {
+  AppState.currentWorkspace = ws;
+  AppState.currentSlideIdx = 0;
+  AppState.isAutoPlaying = false;
+  clearTimeout(AppState.autoPlayTimer);
+
+  // Garante que o workspace tenha slides prontos
+  if (!ws.slides || ws.slides.length === 0) {
+    ws.slides = window.gerarSlidesParaWorkspace(ws);
+  }
+
+  document.getElementById('pres-workspace-title').textContent = ws.titulo;
+  const sourceBadge = document.getElementById('pres-source-badge');
+  if (ws.isNotebookLM) {
+    sourceBadge.innerHTML = '🏷️ Projeto do NotebookLM';
+    sourceBadge.style.background = '#EDE9FE';
+    sourceBadge.style.color = '#6D28D9';
+  } else {
+    sourceBadge.innerHTML = '🦜 Apresentação do Calisto';
+    sourceBadge.style.background = '#EEF2FF';
+    sourceBadge.style.color = '#4338CA';
+  }
+
+  const autoBtn = document.getElementById('btn-pres-autoplay');
+  if (autoBtn) {
+    autoBtn.classList.remove('active-autoplay');
+    autoBtn.innerHTML = '▶️ Auto-Play';
+  }
+
+  document.getElementById('hub-view').style.display = 'none';
+  document.getElementById('study-view').classList.remove('active');
+  document.getElementById('presentation-view').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (window.parrot3DInstances && window.parrot3DInstances.presentation) {
+    setTimeout(() => window.parrot3DInstances.presentation.onResize(), 120);
+  }
+
+  if (window.setParrotMoodAll) window.setParrotMoodAll('happy');
+
+  carregarSlideAtual();
+}
+
+function fecharApresentacao() {
+  AppState.isAutoPlaying = false;
+  clearTimeout(AppState.autoPlayTimer);
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (window.setParrotSpeakingAll) window.setParrotSpeakingAll(false);
+
+  document.getElementById('presentation-view').classList.remove('active');
+  document.getElementById('hub-view').style.display = 'block';
+  renderizarGridWorkspaces();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function carregarSlideAtual() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.slides || ws.slides.length === 0) return;
+
+  const total = ws.slides.length;
+  const slide = ws.slides[AppState.currentSlideIdx];
+  const nome = AppState.childName || 'Pequeno Explorador';
+
+  // Atualiza Metadados do Slide
+  document.getElementById('pres-slide-pill').textContent = `Slide ${AppState.currentSlideIdx + 1} de ${total} ⭐`;
+  
+  const typeLabels = {
+    'intro': '🌟 Abertura',
+    'conceito': '📖 Fundamentos',
+    'audio': '🎙️ Áudio Overview',
+    'curiosidade': '💡 Curiosidades',
+    'desafio': '🃏 Desafio Rápido',
+    'conclusao': '🏆 Conclusão'
+  };
+  document.getElementById('pres-slide-type').textContent = typeLabels[slide.tipo] || '✨ Saber';
+
+  // Ícone, Título e Subtítulo
+  document.getElementById('pres-slide-icon').textContent = slide.icone || ws.icone || '🌟';
+  document.getElementById('pres-slide-title').textContent = slide.titulo;
+  document.getElementById('pres-slide-sub').textContent = slide.subtitulo || '';
+
+  // Destaque
+  const highlightCard = document.getElementById('pres-slide-highlight-card');
+  const highlightText = document.getElementById('pres-slide-highlight-text');
+  if (slide.destaque) {
+    highlightCard.style.display = 'block';
+    highlightText.textContent = slide.destaque;
+  } else {
+    highlightCard.style.display = 'none';
+  }
+
+  // Tópicos
+  const bulletsList = document.getElementById('pres-slide-bullets');
+  bulletsList.innerHTML = '';
+  if (slide.topicos && slide.topicos.length > 0) {
+    slide.topicos.forEach(topic => {
+      const li = document.createElement('li');
+      li.textContent = topic;
+      bulletsList.appendChild(li);
+    });
+  }
+
+  // Desafio Interativo / Flashcard no Slide
+  const interactiveBox = document.getElementById('pres-slide-interactive-box');
+  const interactiveQ = document.getElementById('pres-interactive-q');
+  const interactiveA = document.getElementById('pres-interactive-a');
+  if (slide.tipo === 'desafio' && slide.respostaDestaque) {
+    interactiveBox.style.display = 'block';
+    interactiveQ.textContent = slide.destaque || 'Desafio do Calisto';
+    interactiveA.style.display = 'none';
+    interactiveA.textContent = slide.respostaDestaque;
+  } else {
+    interactiveBox.style.display = 'none';
+  }
+
+  // Áudio Overview do NotebookLM
+  const audioBox = document.getElementById('pres-slide-audio-box');
+  const audioPlayer = document.getElementById('pres-audio-player');
+  if (slide.tipo === 'audio' && slide.audioUrl) {
+    audioBox.style.display = 'block';
+    audioPlayer.src = slide.audioUrl;
+  } else {
+    audioBox.style.display = 'none';
+    audioPlayer.src = '';
+  }
+
+  // Fala do Apresentador Calisto
+  const speakerSpeech = document.getElementById('pres-speaker-speech');
+  const textoFala = slide.falaCalisto || `Hehehe! Vamos aprender sobre ${slide.titulo}, ${nome}! Preste atenção aos detalhes!`;
+  speakerSpeech.textContent = textoFala;
+
+  // Atualizar Indicador de Bolinhas
+  const dotsContainer = document.getElementById('pres-dots-container');
+  dotsContainer.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = `pres-dot ${i === AppState.currentSlideIdx ? 'active' : ''}`;
+    dot.title = `Ir para Slide ${i + 1}`;
+    dot.addEventListener('click', () => irParaSlide(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  // Falar o conteúdo com voz masculina do Calisto
+  narrarSlideAtual();
+}
+
+function narrarSlideAtual() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.slides) return;
+  const slide = ws.slides[AppState.currentSlideIdx];
+  const textoFala = slide.falaCalisto || slide.destaque || slide.titulo;
+
+  const speakingAnim = document.getElementById('pres-speaking-anim');
+  if (speakingAnim) speakingAnim.style.display = 'inline';
+
+  falarTexto(textoFala, () => {
+    if (speakingAnim) speakingAnim.style.display = 'none';
+    
+    // Se o Auto-Play estiver ativo, passa para o próximo slide após 2.5s
+    if (AppState.isAutoPlaying) {
+      clearTimeout(AppState.autoPlayTimer);
+      AppState.autoPlayTimer = setTimeout(() => {
+        if (AppState.isAutoPlaying) {
+          if (AppState.currentSlideIdx < ws.slides.length - 1) {
+            proximoSlide();
+          } else {
+            // Fim da apresentação
+            AppState.isAutoPlaying = false;
+            const autoBtn = document.getElementById('btn-pres-autoplay');
+            if (autoBtn) {
+              autoBtn.classList.remove('active-autoplay');
+              autoBtn.innerHTML = '▶️ Auto-Play';
+            }
+            confetti.burst(100);
+            sounds.playFanfare();
+          }
+        }
+      }, 2500);
+    }
+  });
+}
+
+function proximoSlide() {
+  const ws = AppState.currentWorkspace;
+  if (!ws || !ws.slides) return;
+  sounds.playPop();
+
+  if (AppState.currentSlideIdx < ws.slides.length - 1) {
+    AppState.currentSlideIdx++;
+    carregarSlideAtual();
+  } else {
+    // Último slide atingido: celebração e convite para a sala de estudos
+    confetti.burst(80);
+    sounds.playFanfare();
+    if (confirm('🎉 Parabéns! Você concluiu todos os slides! Deseja ir para a Sala de Estudos com Flashcards e Quiz agora?')) {
+      abrirWorkspace(ws);
+    }
+  }
+}
+
+function anteriorSlide() {
+  sounds.playPop();
+  if (AppState.currentSlideIdx > 0) {
+    AppState.currentSlideIdx--;
+    carregarSlideAtual();
+  }
+}
+
+function irParaSlide(index) {
+  sounds.playPop();
+  AppState.currentSlideIdx = index;
+  carregarSlideAtual();
+}
+
+function toggleAutoPlay() {
+  AppState.isAutoPlaying = !AppState.isAutoPlaying;
+  sounds.playPop();
+  const autoBtn = document.getElementById('btn-pres-autoplay');
+
+  if (AppState.isAutoPlaying) {
+    if (autoBtn) {
+      autoBtn.classList.add('active-autoplay');
+      autoBtn.innerHTML = '⏸️ Pausar Auto-Play';
+    }
+    narrarSlideAtual();
+  } else {
+    clearTimeout(AppState.autoPlayTimer);
+    if (autoBtn) {
+      autoBtn.classList.remove('active-autoplay');
+      autoBtn.innerHTML = '▶️ Auto-Play';
+    }
+  }
+}
+
+function revelarRespostaSlide() {
+  sounds.playCorrect();
+  const answerEl = document.getElementById('pres-interactive-a');
+  if (answerEl) {
+    answerEl.style.display = 'block';
+  }
 }
 
 // ====================================================================
@@ -499,8 +778,24 @@ function abrirWorkspace(ws) {
   document.getElementById('current-workspace-title').textContent = ws.titulo;
   document.getElementById('current-workspace-sub').textContent = ws.subtitulo || '';
 
+  // Configura Vídeo ou Áudio
+  const videoWrapper = document.getElementById('study-video-wrapper');
   const videoFrame = document.getElementById('study-video-frame');
-  videoFrame.src = ws.videoUrl || '';
+  const audioOverviewCard = document.getElementById('study-audio-overview-card');
+  const audioElement = document.getElementById('study-audio-element');
+
+  if (ws.videoUrl) {
+    videoWrapper.style.display = 'block';
+    videoFrame.src = ws.videoUrl;
+    if (audioOverviewCard) audioOverviewCard.style.display = 'none';
+  } else {
+    videoWrapper.style.display = 'none';
+    videoFrame.src = '';
+    if (audioOverviewCard) {
+      audioOverviewCard.style.display = 'block';
+      if (audioElement && ws.audioUrl) audioElement.src = ws.audioUrl;
+    }
+  }
 
   document.getElementById('study-summary-text').textContent = ws.resumo;
   const topicsList = document.getElementById('study-topics-list');
@@ -523,10 +818,11 @@ function abrirWorkspace(ws) {
   carregarQuizAtual();
   ativarAba('tab-video');
 
-  const calistoIntro = `Hehehe! ${nome}, bem-vindo ao mundo ${ws.titulo}! Assista ao vídeo comigo ou venha para os cartões mágicos e o quiz!`;
+  const calistoIntro = `Hehehe! ${nome}, bem-vindo ao mundo ${ws.titulo}! Assista à apresentação, explore os cartões mágicos e acerte o quiz comigo!`;
   document.getElementById('paco-study-speech').textContent = calistoIntro;
 
   document.getElementById('hub-view').style.display = 'none';
+  document.getElementById('presentation-view').classList.remove('active');
   document.getElementById('study-view').classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -540,13 +836,262 @@ function abrirWorkspace(ws) {
 }
 
 function fecharWorkspace() {
-  document.getElementById('study-video-frame').src = '';
+  const videoFrame = document.getElementById('study-video-frame');
+  if (videoFrame) videoFrame.src = '';
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
   document.getElementById('study-view').classList.remove('active');
+  document.getElementById('presentation-view').classList.remove('active');
   document.getElementById('hub-view').style.display = 'block';
   renderizarGridWorkspaces();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ====================================================================
+// PARSER INTELIGENTE DO GOOGLE NOTEBOOKLM
+// ====================================================================
+function abrirModalNotebookLM() {
+  sounds.playPop();
+  document.getElementById('notebooklm-modal').classList.add('open');
+}
+
+function fecharModalNotebookLM() {
+  document.getElementById('notebooklm-modal').classList.remove('open');
+}
+
+function carregarPresetNotebookLM(index) {
+  sounds.playPop();
+  const presets = window.NOTEBOOKLM_PRESETS || [];
+  if (presets[index]) {
+    document.getElementById('notebooklm-url-input').value = presets[index].url;
+    document.getElementById('notebooklm-content-input').value = presets[index].rawContent;
+  }
+}
+
+function carregarArquivoNotebookLM(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    document.getElementById('notebooklm-content-input').value = evt.target.result;
+    sounds.playPop();
+  };
+  reader.readAsText(file);
+}
+
+function processarImportacaoNotebookLM() {
+  const urlInput = document.getElementById('notebooklm-url-input').value.trim();
+  const rawText = document.getElementById('notebooklm-content-input').value.trim();
+
+  if (!rawText && !urlInput) {
+    sounds.playWrong();
+    alert('Por favor, cole a URL do projeto do NotebookLM ou o texto dos itens gerados (Guia de Estudo, FAQ, etc.).');
+    return;
+  }
+
+  try {
+    const ws = parseNotebookLMContent(urlInput, rawText);
+    
+    // Insere o novo workspace no início da lista
+    window.WORKSPACES_DATA.unshift(ws);
+    window.salvarWorkspaces(window.WORKSPACES_DATA);
+
+    fecharModalNotebookLM();
+    sounds.playFanfare();
+    confetti.burst(120);
+
+    // Abre imediatamente na nova Apresentação do Calisto
+    abrirApresentacao(ws);
+  } catch (err) {
+    sounds.playWrong();
+    alert('Erro ao processar os materiais do NotebookLM: ' + err.message);
+  }
+}
+
+function parseNotebookLMContent(url, text) {
+  const lines = text.split('\n').map(l => l.trim());
+  
+  // 1. Extração do Título
+  let titulo = 'Projeto do NotebookLM';
+  for (let l of lines) {
+    if (l.startsWith('# ')) {
+      titulo = l.replace(/^#\s+/, '').replace(/^(Guia de Estudo|Documento de Briefing|NotebookLM:?)\s*/i, '');
+      break;
+    }
+  }
+  if (!titulo && url) {
+    const parts = url.split('/');
+    titulo = 'Projeto ' + (parts[parts.length - 1] || 'NotebookLM');
+  }
+
+  // 2. Extração do Resumo
+  let resumo = '';
+  let collectingResumo = false;
+  for (let l of lines) {
+    if (/^##\s*(Resumo|Briefing|Visão Geral)/i.test(l)) {
+      collectingResumo = true;
+      continue;
+    }
+    if (collectingResumo) {
+      if (l.startsWith('##')) break;
+      if (l.length > 0) resumo += (resumo ? ' ' : '') + l;
+    }
+  }
+  if (!resumo) {
+    resumo = `Apresentação e estudo interativo gerado a partir do seu projeto no Google NotebookLM!`;
+  }
+
+  // 3. Extração dos Tópicos
+  let topicos = [];
+  let collectingTopics = false;
+  for (let l of lines) {
+    if (/^##\s*(Tópicos|Principais|Conceitos|Resumo de Conteúdo)/i.test(l)) {
+      collectingTopics = true;
+      continue;
+    }
+    if (collectingTopics) {
+      if (l.startsWith('##')) break;
+      if (l.startsWith('- ') || l.startsWith('* ') || /^\d+\.\s/.test(l)) {
+        topicos.push(l.replace(/^[-*]\s+|\d+\.\s+/, ''));
+      }
+    }
+  }
+  if (topicos.length === 0) {
+    topicos = [
+      'Visão geral completa dos conceitos do projeto.',
+      'Explorações práticas e conexões científicas.',
+      'Dicas do Calisto para fixar o conhecimento.'
+    ];
+  }
+
+  // 4. Extração de Curiosidades
+  let curiosidades = [];
+  let collectingCur = false;
+  for (let l of lines) {
+    if (/^##\s*(Curiosidades|Fatos Surpreendentes)/i.test(l)) {
+      collectingCur = true;
+      continue;
+    }
+    if (collectingCur) {
+      if (l.startsWith('##')) break;
+      if (l.startsWith('- ') || l.startsWith('* ') || /^\d+\.\s/.test(l)) {
+        curiosidades.push(l.replace(/^[-*]\s+|\d+\.\s+/, ''));
+      }
+    }
+  }
+  if (curiosidades.length === 0) {
+    curiosidades = [
+      'O NotebookLM organiza notas e conexões automaticamente com IA!',
+      'Você pode revisar este material sempre que quiser no Calisto!'
+    ];
+  }
+
+  // 5. Extração de Flashcards (Glossário / FAQ)
+  let flashcards = [];
+  let collectingFAQ = false;
+  for (let l of lines) {
+    if (/^##\s*(Glossário|FAQ|Perguntas de Fixação|Perguntas Frequentes)/i.test(l)) {
+      collectingFAQ = true;
+      continue;
+    }
+    if (collectingFAQ) {
+      if (l.startsWith('##')) break;
+      if (l.includes('|')) {
+        const parts = l.replace(/^[-*]\s+/, '').split('|');
+        if (parts.length >= 2) {
+          flashcards.push({
+            pergunta: parts[0].trim(),
+            resposta: parts[1].trim()
+          });
+        }
+      } else if (l.startsWith('Q:') || l.startsWith('P:')) {
+        const p = l.replace(/^[QP]:\s*/i, '').trim();
+        flashcards.push({ pergunta: p, resposta: 'Resposta do sábio Calisto!' });
+      }
+    }
+  }
+  if (flashcards.length === 0) {
+    flashcards = [
+      {
+        pergunta: `Qual é o tema principal deste estudo?`,
+        resposta: `${titulo}! Aprendendo com o Calisto! 🦜`
+      }
+    ];
+  }
+
+  // 6. Extração de Questões do Quiz
+  let quiz = [];
+  let collectingQuiz = false;
+  let currentQ = null;
+
+  for (let l of lines) {
+    if (/^##\s*(Questões|Quiz|Perguntas do Quiz|Testes)/i.test(l)) {
+      collectingQuiz = true;
+      continue;
+    }
+    if (collectingQuiz) {
+      if (l.startsWith('##')) break;
+      if (/^\d+\.\s/.test(l)) {
+        if (currentQ && currentQ.opcoes.length >= 2) quiz.push(currentQ);
+        currentQ = {
+          pergunta: l.replace(/^\d+\.\s+/, ''),
+          opcoes: [],
+          respostaCorreta: 0,
+          explicacao: 'Parabéns pela dedicação! Resposta certíssima!'
+        };
+      } else if (currentQ && /^[A-D]\)/i.test(l)) {
+        currentQ.opcoes.push(l.replace(/^[A-D]\)\s*/i, ''));
+      } else if (currentQ && /^Correta:\s*([A-D])/i.test(l)) {
+        const match = l.match(/^Correta:\s*([A-D])/i);
+        if (match) {
+          const letter = match[1].toUpperCase();
+          const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+          currentQ.respostaCorreta = map[letter] !== undefined ? map[letter] : 0;
+        }
+      } else if (currentQ && /^Explicação:\s*(.+)/i.test(l)) {
+        currentQ.explicacao = l.replace(/^Explicação:\s*/i, '');
+      }
+    }
+  }
+  if (currentQ && currentQ.opcoes.length >= 2) quiz.push(currentQ);
+
+  if (quiz.length === 0) {
+    quiz = [
+      {
+        pergunta: `O que aprendemos nesta apresentação sobre ${titulo}?`,
+        opcoes: [
+          'Conceitos fascinantes explicados pelo Calisto',
+          'Nada interessante',
+          'Apenas números aleatórios',
+          'Nenhuma das anteriores'
+        ],
+        respostaCorreta: 0,
+        explicacao: 'Excelente! Aprender com o Calisto é uma aventura inesquecível!'
+      }
+    ];
+  }
+
+  const novoWorkspace = {
+    id: 'nlm_' + Date.now(),
+    isNotebookLM: true,
+    notebookUrl: url || '',
+    titulo: titulo,
+    icone: '🌟',
+    subtitulo: 'Projeto importado do Google NotebookLM',
+    cor: 'linear-gradient(135deg, #1E40AF, #7C3AED)',
+    videoUrl: '',
+    resumo: resumo,
+    topicos: topicos,
+    curiosidades: curiosidades,
+    flashcards: flashcards,
+    quiz: quiz
+  };
+
+  // Gera os slides de apresentação ricos
+  novoWorkspace.slides = window.gerarSlidesParaWorkspace(novoWorkspace);
+
+  return novoWorkspace;
 }
 
 // ====================================================================
@@ -884,6 +1429,47 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-close-educator', 'click', fecharModalEducador);
   safeBind('btn-save-json', 'click', salvarDadosEducador);
   safeBind('btn-reset-defaults', 'click', restaurarPadroesEducador);
+
+  // Importador do Google NotebookLM
+  safeBind('btn-open-notebooklm', 'click', abrirModalNotebookLM);
+  safeBind('btn-hero-import-notebooklm', 'click', abrirModalNotebookLM);
+  safeBind('btn-quick-notebooklm', 'click', abrirModalNotebookLM);
+  safeBind('btn-close-notebooklm', 'click', fecharModalNotebookLM);
+  safeBind('btn-cancel-notebooklm', 'click', fecharModalNotebookLM);
+  safeBind('btn-preset-robotics', 'click', () => carregarPresetNotebookLM(0));
+  safeBind('btn-preset-coral', 'click', () => carregarPresetNotebookLM(1));
+  safeBind('notebooklm-file-input', 'change', carregarArquivoNotebookLM);
+  safeBind('btn-generate-notebooklm', 'click', processarImportacaoNotebookLM);
+
+  // Modo Apresentação do Calisto
+  safeBind('btn-pres-back', 'click', fecharApresentacao);
+  safeBind('btn-pres-prev', 'click', anteriorSlide);
+  safeBind('btn-pres-next', 'click', proximoSlide);
+  safeBind('btn-pres-autoplay', 'click', toggleAutoPlay);
+  safeBind('btn-pres-speak', 'click', narrarSlideAtual);
+  safeBind('btn-pres-reveal-answer', 'click', revelarRespostaSlide);
+  safeBind('btn-pres-to-study', 'click', () => {
+    if (AppState.currentWorkspace) abrirWorkspace(AppState.currentWorkspace);
+  });
+  safeBind('btn-switch-to-presentation', 'click', () => {
+    if (AppState.currentWorkspace) abrirApresentacao(AppState.currentWorkspace);
+  });
+
+  // Controle por teclado (Setas e Barra de Espaço) na Apresentação
+  window.addEventListener('keydown', (e) => {
+    const presView = document.getElementById('presentation-view');
+    if (presView && presView.classList.contains('active')) {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        proximoSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        anteriorSlide();
+      } else if (e.key === 'Escape') {
+        fecharApresentacao();
+      }
+    }
+  });
 
   document.querySelectorAll('.educator-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {

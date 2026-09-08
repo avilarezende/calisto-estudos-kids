@@ -983,6 +983,11 @@ function initParrot3D() {
     window.parrot3DInstances.hero = new RingNeckParrot3D('paco-hero-3d', { width: 230, height: 230, scale: 1.12 });
   }
 
+  const presentationContainer = document.getElementById('calisto-presentation-3d');
+  if (presentationContainer) {
+    window.parrot3DInstances.presentation = new RingNeckParrot3D('calisto-presentation-3d', { width: 220, height: 220, scale: 1.08 });
+  }
+
   const studyContainer = document.getElementById('paco-study-3d');
   if (studyContainer) {
     window.parrot3DInstances.study = new RingNeckParrot3D('paco-study-3d', { width: 200, height: 200, scale: 1.02 });
