@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aventura do Saber com o Calisto 🦜 | Estudo Divertido e Interativo</title>
+  <meta name="description" content="Portal infantil gamificado de estudos guiado pelo sábio Calisto, com vídeos, flashcards e quiz.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/mascot.jpg" type="image/jpeg">
+  <!-- Three.js para renderização do Mascote Calisto 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Decorações de fundo -->
+  <div class="bg-decorations" aria-hidden="true">
+    <div class="bubble bubble-1"></div>
+    <div class="bubble bubble-2"></div>
+    <div class="bubble bubble-3"></div>
+  </div>
+
+  <!-- Canvas para Chuva de Confetes -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- ===================================================================
+       CALISTO ANDARILHO / VOADOR FLUTUANTE PELA PÁGINA
+       =================================================================== -->
+  <div id="calisto-wanderer-container" class="calisto-wanderer-wrap" title="Dê dois cliques em qualquer lugar da tela para chamar o Calisto!">
+    <div id="calisto-wanderer-speech" class="calisto-wanderer-speech">Hehehe! Estou de olho!</div>
+    <div id="calisto-wanderer-3d" class="calisto-wanderer-canvas"></div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- BARRA SUPERIOR / CABEÇALHO -->
+    <header class="main-header">
+      <div class="brand" id="btn-home" title="Voltar para a página inicial">
+        <img src="assets/mascot.jpg" alt="Calisto" class="brand-avatar">
+        <div class="brand-title">Aventura do <span>Saber</span> 🦜</div>
+      </div>
+
+      <!-- Perfil da Criança & Gamificação -->
+      <div class="header-stats">
+        <div class="stat-pill user-name-pill" id="btn-edit-name" title="Clique para trocar o seu nome!">
+          <span>👤</span>
+          <span id="header-child-name">Explorador</span>
+          <span style="font-size: 0.75rem; opacity: 0.7;">✏️</span>
+        </div>
+        <div class="stat-pill" title="Estrelas conquistadas">
+          <span>⭐</span>
+          <span id="user-stars">0</span>
+        </div>
+        <div class="stat-pill trophies" title="Missões completadas">
+          <span>🏆</span>
+          <span id="user-trophies">0</span>
+        </div>
+      </div>
+
+      <!-- Ações: Chamar Calisto, Som & Modo Educador -->
+      <div class="header-actions">
+        <button id="btn-summon-calisto" class="icon-action-btn" title="Chamar o Calisto para cá!">
+          🦜 Chamar Calisto
+        </button>
+        <button id="btn-toggle-sound" class="icon-action-btn" title="Ativar ou desativar som">
+          🔊
+        </button>
+        <button id="btn-open-educator" class="icon-action-btn educator-btn" title="Modo Educador / Personalizar Workspaces">
+          ⚙️ Modo Educador
+        </button>
+      </div>
+    </header>
+
+    <!-- TELA 1: HUB DE SELEÇÃO DOS 10 WORKSPACES -->
+    <main id="hub-view">
+      <!-- Banner de Boas-Vindas com o Calisto -->
+      <section class="mascot-hero-card">
+        <div class="mascot-hero-avatar-wrap">
+          <div id="paco-hero-3d" class="paco-3d-canvas-box" title="Calisto"></div>
+          <div class="paco-3d-hint">👆 Calisto</div>
+        </div>
+        <div class="mascot-hero-content">
+          <h1>Olá, <span id="hero-child-name" class="highlight">Pequeno Explorador</span>! 👋</h1>
+          <div class="speech-bubble" id="hub-greeting-text">
+            Hehehe! Eu sou o sábio <strong>Calisto</strong>! Escolha um dos 10 mundos do saber abaixo para assistir ao vídeo, virar cartões mágicos e acertar o quiz comigo! 🌟
+          </div>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button id="btn-speak-greeting" class="speak-btn">
+              🔊 Ouvir o Calisto Falar
+            </button>
+            <button id="btn-tease-paco" class="speak-btn" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+              😡 Mexer com o Calisto!
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Grade dos 10 Workspaces -->
+      <section>
+        <div class="section-heading">
+          <h2>🗺️ Escolha o seu Workspace de Estudo</h2>
+          <span class="section-tag" id="workspace-count-tag">10 Temas Prontos</span>
+        </div>
+
+        <div class="workspaces-grid" id="workspaces-grid-container">
+          <!-- Os 10 cartões são gerados dinamicamente pelo JavaScript -->
+        </div>
+      </section>
+    </main>
+
+    <!-- TELA 2: SALA DE ESTUDOS DO WORKSPACE SELECIONADO -->
+    <section id="study-view" class="study-room">
+      <div class="study-header">
+        <button id="btn-back-hub" class="back-btn">
+          ⬅️ Voltar aos Temas
+        </button>
+        <div class="study-title-group">
+          <span class="study-icon" id="current-workspace-icon">🚀</span>
+          <div>
+            <h2 id="current-workspace-title">Título do Workspace</h2>
+            <p id="current-workspace-sub" style="color: #64748B; font-size: 0.95rem;">Subtítulo explicativo</p>
+          </div>
+        </div>
+        <div class="stat-pill" style="background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8;">
+          <span>🎯</span> <span id="study-progress-tag">Módulo Ativo</span>
+        </div>
+      </div>
+
+      <!-- Layout Principal da Atividade -->
+      <div class="study-layout">
+        <div class="study-main-panel">
+          <!-- Abas de Atividades -->
+          <nav class="study-tabs">
+            <button class="tab-btn active" data-tab="tab-video" id="tab-btn-video">
+              📺 Cinema do Calisto
+            </button>
+            <button class="tab-btn" data-tab="tab-flashcards" id="tab-btn-flashcards">
+              🃏 Cartões Mágicos
+            </button>
+            <button class="tab-btn" data-tab="tab-quiz" id="tab-btn-quiz">
+              🏆 Missão Desafio
+            </button>
+            <button class="tab-btn" data-tab="tab-curiosities" id="tab-btn-curiosities">
+              💡 Curiosidades
+            </button>
+          </nav>
+
+          <!-- ABA 1: VÍDEO EXPLICATIVO & RESUMO -->
+          <div class="tab-pane active" id="tab-video">
+            <div class="video-container">
+              <iframe id="study-video-frame" src="" title="Vídeo Explicativo do Conteúdo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <div class="summary-card">
+              <h3>📖 O que vamos aprender:</h3>
+              <p id="study-summary-text" style="font-size: 1.1rem; margin-bottom: 1rem; color: #334155; font-weight: 600;"></p>
+              <ul class="topics-list" id="study-topics-list">
+                <!-- Tópicos inseridos via JavaScript -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- ABA 2: FLASHCARDS 3D -->
+          <div class="tab-pane" id="tab-flashcards">
+            <div class="flashcards-container">
+              <div class="flashcard-wrapper" id="flashcard-element" title="Clique no cartão para virar e ver a resposta!">
+                <div class="flashcard-inner" id="flashcard-inner">
+                  <div class="flashcard-front">
+                    <span class="card-hint-badge">❓ Pergunta Curiosa</span>
+                    <div class="card-question-text" id="fc-question">Pergunta aqui?</div>
+                    <div class="card-flip-prompt">🔄 Toque no cartão para ver a resposta</div>
+                  </div>
+                  <div class="flashcard-back">
+                    <span class="card-hint-badge">💡 Resposta do Calisto</span>
+                    <div class="card-answer-text" id="fc-answer">Resposta aqui!</div>
+                    <div class="card-flip-prompt">🔄 Toque para virar novamente</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Controles dos Flashcards -->
+              <div class="flashcard-controls">
+                <button id="fc-prev-btn" class="flash-nav-btn">⬅️ Anterior</button>
+                <span class="flashcard-indicator" id="fc-counter">1 / 4</span>
+                <button id="fc-next-btn" class="flash-nav-btn">Próximo ➡️</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA 3: QUIZ GAMIFICADO -->
+          <div class="tab-pane" id="tab-quiz">
+            <div class="quiz-header">
+              <div class="quiz-lives">
+                <span>Vidas:</span>
+                <span id="quiz-lives-icons">❤️❤️❤️</span>
+              </div>
+              <div class="quiz-score-badge" id="quiz-status-indicator">Pergunta 1 de 3</div>
+            </div>
+
+            <div class="quiz-question-box">
+              <div class="quiz-question-title" id="quiz-question-text">Carregando pergunta...</div>
+              <div class="quiz-options-list" id="quiz-options-container">
+                <!-- Botões de alternativa gerados dinamicamente -->
+              </div>
+            </div>
+
+            <!-- Feedback da Resposta -->
+            <div class="quiz-feedback-box" id="quiz-feedback-box">
+              <div id="quiz-feedback-msg" style="font-weight: 700; font-size: 1.15rem; margin-bottom: 0.5rem;"></div>
+              <p id="quiz-feedback-explanation" style="font-size: 1.05rem;"></p>
+              <button id="btn-next-quiz" class="next-question-btn">Continuar ➡️</button>
+            </div>
+          </div>
+
+          <!-- ABA 4: CURIOSIDADES EXTRAS -->
+          <div class="tab-pane" id="tab-curiosities">
+            <div class="summary-card" style="background: #FFFBEB; border-color: #FDE68A;">
+              <h3 style="color: #B45309;">✨ Baú de Segredos do Calisto:</h3>
+              <ul class="topics-list" id="study-curiosities-list" style="margin-top: 1rem;">
+                <!-- Curiosidades inseridas via JavaScript -->
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- LATERAL: COMPANHEIRO CALISTO 3D FALANTE -->
+        <aside class="paco-companion-card">
+          <div id="paco-study-3d" class="paco-3d-canvas-box" style="width: 200px; height: 200px; margin: 0 auto 0.5rem;" title="Calisto"></div>
+          <div class="paco-3d-hint" style="margin-bottom: 0.75rem;">👆 Calisto</div>
+          <h3 class="paco-name">Calisto 🦜</h3>
+          <div class="paco-speech-bubble" id="paco-study-speech">
+            Vamos aprender juntos! Assista ao vídeo ou clique nos cartões mágicos para treinar sua memória!
+          </div>
+          <button id="btn-paco-speak" class="paco-voice-btn">
+            🔊 Ouvir o Calisto Falar
+          </button>
+        </aside>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- MODAL 1: BOAS-VINDAS & NOME DA CRIANÇA -->
+  <div class="modal-overlay" id="name-modal">
+    <div class="modal-content" style="max-width: 500px; text-align: center;">
+      <img src="assets/mascot.jpg" alt="Calisto Sorridente" style="width: 110px; height: 110px; border-radius: 50%; border: 4px solid #10B981; margin-bottom: 1rem; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);">
+      <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: #1E293B; margin-bottom: 0.5rem;">
+        Bem-vindo à Aventura! 🦜
+      </h2>
+      <p style="font-size: 1.1rem; color: #64748B; margin-bottom: 1.5rem;">
+        Eu sou o sábio <strong>Calisto</strong>! Como você se chama, pequeno explorador?
+      </p>
+
+      <form id="form-child-name" onsubmit="event.preventDefault(); window.salvarNomeCrianca();">
+        <input type="text" id="input-child-name" class="cert-name-input" placeholder="Digite seu nome..." autofocus required style="width: 90%; margin-bottom: 1.5rem;">
+        <div>
+          <button type="submit" class="speak-btn" style="width: 100%; justify-content: center; font-size: 1.2rem; padding: 0.85rem;">
+            🚀 Começar a Aventura!
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CERTIFICADO DE VITÓRIA / MISSÃO CONCLUÍDA -->
+  <div class="modal-overlay" id="victory-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="btn-close-victory">&times;</button>
+      <div class="certificate-frame">
+        <img src="assets/mascot.jpg" alt="Calisto Celebrando" class="cert-avatar">
+        <h2 class="cert-title">🎉 Parabéns, Campeão! 🎉</h2>
+        <p style="font-size: 1.15rem; color: #475569;">Você concluiu o módulo com sucesso!</p>
+        
+        <input type="text" id="cert-child-name" class="cert-name-input" placeholder="Digite seu nome aqui!" value="Pequeno Explorador">
+        
+        <p style="font-size: 1.1rem; font-weight: 700; color: #16A34A; margin-bottom: 1.5rem;">
+          Você ganhou <strong>+3 Estrelas Douradas</strong> e <strong>+1 Troféu</strong>! ⭐⭐⭐🏆
+        </p>
+
+        <button id="btn-claim-victory" class="speak-btn" style="padding: 0.85rem 2rem; font-size: 1.15rem;">
+          🚀 Continuar Explorando com o Calisto!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: MODO EDUCADOR & PERSONALIZAÇÃO -->
+  <div class="modal-overlay" id="educator-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="btn-close-educator">&times;</button>
+      <h2 style="font-family: var(--font-display); font-size: 1.6rem; color: #4C1D95; margin-bottom: 0.75rem;">
+        ⚙️ Central do Educador & Personalização
+      </h2>
+      <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 1.25rem;">
+        Personalize os 10 workspaces com os temas e vídeos do seu <strong>Gemini Notebook</strong> de forma super fácil!
+      </p>
+
+      <div class="educator-tabs">
+        <button class="educator-tab-btn active" data-ed-tab="ed-tab-prompt">🤖 Prompt para o Gemini</button>
+        <button class="educator-tab-btn" data-ed-tab="ed-tab-json">📝 Editar Dados (JSON)</button>
+      </div>
+
+      <!-- Aba do Prompt para o Gemini -->
+      <div id="ed-tab-prompt" class="ed-tab-content">
+        <p style="font-size: 0.95rem; margin-bottom: 0.75rem; color: #334155;">
+          Copie o prompt abaixo, cole no seu <strong>Gemini Notebook</strong> com seu conteúdo e cole a resposta na aba <em>"Editar Dados"</em>:
+        </p>
+        <div class="gemini-prompt-box" id="gemini-prompt-text">
+Por favor, transforme o conteúdo deste workspace de estudo em um módulo infantil para o portal do Periquito Calisto no formato JSON com a seguinte estrutura:
+
+{
+  "id": 1,
+  "titulo": "Título do Seu Conteúdo",
+  "icone": "🚀",
+  "subtitulo": "Subtítulo amigável para crianças",
+  "cor": "linear-gradient(135deg, #4A00E0, #8E2DE2)",
+  "videoUrl": "https://www.youtube-nocookie.com/embed/SEU_ID_DE_VIDEO",
+  "resumo": "Explicação em 2 frases simples.",
+  "topicos": ["Ponto 1", "Ponto 2", "Ponto 3", "Ponto 4"],
+  "curiosidades": ["Curiosidade 1", "Curiosidade 2"],
+  "flashcards": [
+    { "pergunta": "Pergunta divertida?", "resposta": "Resposta clara!" }
+  ],
+  "quiz": [
+    {
+      "pergunta": "Pergunta de múltipla escolha?",
+      "opcoes": ["Opção A", "Opção B", "Opção C", "Opção D"],
+      "respostaCorreta": 0,
+      "explicacao": "Explicação do sábio periquito Calisto!"
+    }
+  ]
+}
+        </div>
+        <button id="btn-copy-prompt" class="copy-prompt-btn">📋 Copiar Prompt do Gemini</button>
+      </div>
+
+      <!-- Aba do Editor JSON -->
+      <div id="ed-tab-json" class="ed-tab-content" style="display: none;">
+        <textarea id="json-editor-input" class="json-editor-textarea" spellcheck="false"></textarea>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap;">
+          <button id="btn-save-json" class="speak-btn" style="background: #10B981;">💾 Salvar & Aplicar Agora</button>
+          <button id="btn-reset-defaults" class="flash-nav-btn" style="color: #DC2626; border-color: #FECACA;">↺ Restaurar Padrões</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data/workspaces.js"></script>
+  <script src="mascot3d.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

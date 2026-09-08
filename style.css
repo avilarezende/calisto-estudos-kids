@@ -1,0 +1,1307 @@
+/* ===================================================================
+   AVENTURA DO SABER COM O CALISTO - DESIGN SYSTEM INFANTIL & VIBRANTE
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --font-display: 'Fredoka', cursive, sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  
+  /* Cores Principais */
+  --color-primary: #10B981;
+  --color-primary-dark: #059669;
+  --color-secondary: #FFB703;
+  --color-accent: #FB8500;
+  --color-sky: #0284C7;
+  --color-purple: #8B5CF6;
+  --color-pink: #EC4899;
+  
+  /* Fundos & Superfícies */
+  --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #f0fdf4 100%);
+  --card-bg: rgba(255, 255, 255, 0.92);
+  --card-border: rgba(255, 255, 255, 0.8);
+  --card-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --card-shadow-hover: 0 20px 40px rgba(15, 23, 42, 0.15);
+  
+  /* Textos */
+  --text-main: #1E293B;
+  --text-muted: #64748B;
+  
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-full: 9999px;
+  
+  --transition-bounce: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-smooth: all 0.25s ease-out;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Fundo com bolhas decorativas animadas */
+.bg-decorations {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.35;
+  filter: blur(40px);
+  animation: floatBubble 12s infinite alternate ease-in-out;
+}
+
+.bubble-1 {
+  width: 350px;
+  height: 350px;
+  background: #38bdf8;
+  top: -50px;
+  left: -50px;
+}
+
+.bubble-2 {
+  width: 450px;
+  height: 450px;
+  background: #fde047;
+  bottom: -100px;
+  right: -80px;
+  animation-delay: -4s;
+}
+
+.bubble-3 {
+  width: 300px;
+  height: 300px;
+  background: #a7f3d0;
+  top: 40%;
+  left: 30%;
+  animation-delay: -8s;
+}
+
+@keyframes floatBubble {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(40px) scale(1.1); }
+}
+
+/* Canvas de Confete */
+#confetti-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===================================================================
+   CALISTO ANDARILHO / VOADOR FLUTUANTE
+   =================================================================== */
+.calisto-wanderer-wrap {
+  position: fixed;
+  z-index: 9000;
+  pointer-events: auto;
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease;
+  filter: drop-shadow(0 10px 18px rgba(16, 185, 129, 0.35));
+}
+
+.calisto-wanderer-wrap:hover {
+  transform: scale(1.08);
+}
+
+.calisto-wanderer-wrap.flying {
+  filter: drop-shadow(0 18px 26px rgba(16, 185, 129, 0.5));
+}
+
+.calisto-wanderer-wrap.landed-hop {
+  animation: landingHop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes landingHop {
+  0% { transform: translateY(-20px) scale(1.1, 0.9); }
+  50% { transform: translateY(5px) scale(0.9, 1.15); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.calisto-wanderer-canvas {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: visible;
+}
+
+.calisto-wanderer-speech {
+  background: white;
+  border: 2px solid #10B981;
+  border-radius: var(--radius-md);
+  padding: 0.4rem 0.8rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1E293B;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  margin-bottom: -6px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.8);
+  transition: var(--transition-bounce);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.calisto-wanderer-speech.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Layout Principal */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================================================================
+   HEADER & NAVBAR
+   =================================================================== */
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-full);
+  box-shadow: var(--card-shadow);
+  border: 2px solid white;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+}
+
+.brand-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+  animation: wiggle 3s infinite ease-in-out;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-6deg); }
+  75% { transform: rotate(6deg); }
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.brand-title span {
+  color: var(--color-primary-dark);
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #FFFBEB;
+  border: 2px solid #FDE68A;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #B45309;
+}
+
+.stat-pill.user-name-pill {
+  background: #F0FDF4;
+  border-color: #86EFAC;
+  color: #15803D;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+}
+
+.stat-pill.user-name-pill:hover {
+  transform: scale(1.05);
+  background: #DCFCE7;
+}
+
+.stat-pill.trophies {
+  background: #F5F3FF;
+  border-color: #DDD6FE;
+  color: #6D28D9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.icon-btn {
+  background: white;
+  border: 2px solid #E2E8F0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+  border-color: var(--color-primary);
+  background: #F0FDF4;
+}
+
+.educator-btn {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  color: white;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  transition: var(--transition-bounce);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.educator-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+}
+
+/* ===================================================================
+   HERO BANNER COM MASCOTE 3D RINGNECK
+   =================================================================== */
+.mascot-hero,
+.mascot-hero-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border: 3px solid white;
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.mascot-hero-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.paco-3d-canvas-box {
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f0fdf4 40%, #dcfce7 80%, #bbf7d0 100%);
+  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-bounce);
+}
+
+.paco-3d-canvas-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.45);
+}
+
+.paco-3d-hint {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin-top: 0.4rem;
+  background: #DCFCE7;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.mascot-hero-content h1 {
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.mascot-hero-content h1 .highlight {
+  color: var(--color-primary-dark);
+}
+
+.speech-bubble {
+  background: white;
+  border: 2px solid #A7F3D0;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.4rem;
+  font-size: 1.15rem;
+  color: #334155;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 8px 12px 8px 0;
+  border-style: solid;
+  border-color: transparent white transparent transparent;
+  display: block;
+  width: 0;
+}
+
+.speak-btn {
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.75rem 1.4rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  transition: var(--transition-bounce);
+}
+
+.speak-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* ===================================================================
+   GRID DE WORKSPACES (10 MÓDULOS)
+   =================================================================== */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.section-heading h2 {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-tag {
+  background: #E2E8F0;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workspaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.workspace-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 3px solid white;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: var(--transition-bounce);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.workspace-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--card-shadow-hover);
+  border-color: #A7F3D0;
+}
+
+.card-header-bar {
+  padding: 1.25rem 1.25rem 0.85rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-icon-circle {
+  width: 58px;
+  height: 58px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.card-badge {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 1.25rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--text-main);
+  margin-bottom: 0.4rem;
+  line-height: 1.3;
+}
+
+.card-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 0.85rem;
+}
+
+.card-status {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.card-start-btn {
+  background: #F0FDF4;
+  color: var(--color-primary-dark);
+  border: 2px solid #BBF7D0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-full);
+  transition: var(--transition-smooth);
+}
+
+.workspace-card:hover .card-start-btn {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* ===================================================================
+   TELA DO WORKSPACE DE ESTUDO (STUDY ROOM)
+   =================================================================== */
+.study-room {
+  display: none;
+}
+
+.study-room.active {
+  display: block;
+}
+
+.study-header {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.75rem;
+  border: 3px solid white;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: #F1F5F9;
+  border: 2px solid #CBD5E1;
+  color: #334155;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: var(--transition-bounce);
+}
+
+.back-btn:hover {
+  background: #E2E8F0;
+  transform: translateX(-3px);
+}
+
+.study-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.study-icon {
+  font-size: 2.2rem;
+}
+
+.study-title-group h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--text-main);
+}
+
+/* Layout das Atividades & Companheiro Calisto */
+.study-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.study-main-panel {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 3px solid white;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+/* Abas de Navegação das Atividades */
+.study-tabs {
+  display: flex;
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 1rem 0.8rem;
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover {
+  color: var(--color-primary-dark);
+  background: #F1F5F9;
+}
+
+.tab-btn.active {
+  color: var(--color-primary-dark);
+  background: white;
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-pane {
+  display: none;
+  padding: 1.75rem;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================================================================
+   ABA 1: CINEMA DO CALISTO (VÍDEO EXPLICATIVO + RESUMO)
+   =================================================================== */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  background: #0F172A;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1.5rem;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.summary-card {
+  background: #F0FDF4;
+  border: 2px solid #BBF7D0;
+  border-radius: var(--radius-md);
+  padding: 1.4rem;
+}
+
+.summary-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--color-primary-dark);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topics-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.topics-list li {
+  position: relative;
+  padding-left: 2rem;
+  font-size: 1.05rem;
+  color: #334155;
+}
+
+.topics-list li::before {
+  content: '🦜';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 1.15rem;
+}
+
+/* ===================================================================
+   ABA 2: FLASHCARDS 3D MÁGICOS
+   =================================================================== */
+.flashcards-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.flashcard-wrapper {
+  width: 100%;
+  max-width: 540px;
+  height: 280px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  border: 4px solid white;
+}
+
+.flashcard-front {
+  background: linear-gradient(135deg, #60A5FA, #3B82F6);
+  color: white;
+}
+
+.flashcard-back {
+  background: linear-gradient(135deg, #34D399, #10B981);
+  color: white;
+  transform: rotateY(180deg);
+}
+
+.card-hint-badge {
+  background: rgba(255, 255, 255, 0.25);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.card-question-text,
+.card-answer-text {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.4;
+  margin: auto 0;
+}
+
+.card-flip-prompt {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.flashcard-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.flash-nav-btn {
+  background: white;
+  border: 2px solid #E2E8F0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  padding: 0.6rem 1.3rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition-bounce);
+}
+
+.flash-nav-btn:hover {
+  background: #F0FDF4;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.flashcard-indicator {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #64748B;
+}
+
+/* ===================================================================
+   ABA 3: MISSÃO DESAFIO (QUIZ GAMIFICADO)
+   =================================================================== */
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  background: #F8FAFC;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 2px solid #E2E8F0;
+}
+
+.quiz-lives {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 1.3rem;
+}
+
+.quiz-score-badge {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #D97706;
+}
+
+.quiz-question-box {
+  margin-bottom: 1.75rem;
+}
+
+.quiz-question-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  color: var(--text-main);
+  margin-bottom: 1.25rem;
+  line-height: 1.35;
+}
+
+.quiz-options-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.quiz-option-btn {
+  background: #F8FAFC;
+  border: 2px solid #CBD5E1;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quiz-option-btn:hover:not([disabled]) {
+  background: #EFF6FF;
+  border-color: #60A5FA;
+  transform: translateX(4px);
+}
+
+.quiz-option-letter {
+  width: 34px;
+  height: 34px;
+  background: white;
+  border: 2px solid #CBD5E1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.quiz-option-btn.correct {
+  background: #DCFCE7 !important;
+  border-color: #22C55E !important;
+  color: #15803D !important;
+}
+
+.quiz-option-btn.correct .quiz-option-letter {
+  background: #22C55E;
+  color: white;
+  border-color: #22C55E;
+}
+
+.quiz-option-btn.wrong {
+  background: #FEE2E2 !important;
+  border-color: #EF4444 !important;
+  color: #B91C1C !important;
+}
+
+.quiz-option-btn.wrong .quiz-option-letter {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+}
+
+.quiz-feedback-box {
+  margin-top: 1.25rem;
+  padding: 1.2rem;
+  border-radius: var(--radius-md);
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.quiz-feedback-box.show {
+  display: block;
+}
+
+.quiz-feedback-box.correct-fb {
+  background: #F0FDF4;
+  border: 2px solid #86EFAC;
+  color: #166534;
+}
+
+.quiz-feedback-box.wrong-fb {
+  background: #FEF2F2;
+  border: 2px solid #FECACA;
+  color: #991B1B;
+}
+
+.next-question-btn {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white;
+  border: none;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.75rem 1.6rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition-bounce);
+}
+
+.next-question-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* ===================================================================
+   SIDEBAR DO MASCOTE CALISTO NO ESTUDO
+   =================================================================== */
+.paco-companion-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 3px solid white;
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  text-align: center;
+  position: sticky;
+  top: 1.5rem;
+}
+
+.paco-name {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+}
+
+.paco-speech-bubble {
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-size: 1rem;
+  color: #334155;
+  margin-bottom: 1.25rem;
+  text-align: left;
+  line-height: 1.45;
+  min-height: 80px;
+}
+
+.paco-voice-btn {
+  width: 100%;
+  background: #FFFBEB;
+  border: 2px solid #FDE68A;
+  color: #B45309;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: var(--transition-bounce);
+}
+
+.paco-voice-btn:hover {
+  background: #FEF3C7;
+  transform: translateY(-2px);
+}
+
+/* ===================================================================
+   MODAIS
+   =================================================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  max-width: 650px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  padding: 2rem;
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.open .modal-content {
+  transform: scale(1);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: #F1F5F9;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+}
+
+.modal-close-btn:hover {
+  background: #E2E8F0;
+  transform: rotate(90deg);
+}
+
+/* Certificado */
+.certificate-frame {
+  border: 6px double #F59E0B;
+  border-radius: var(--radius-md);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: #FFFDF5;
+}
+
+.cert-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 0.75rem;
+}
+
+.cert-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: #B45309;
+  margin-bottom: 0.5rem;
+}
+
+.cert-name-input {
+  border: 2px dashed #F59E0B;
+  background: white;
+  padding: 0.6rem 1.2rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  text-align: center;
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  margin: 1rem 0;
+  width: 80%;
+}
+
+/* Editor do Educador */
+.educator-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid #E2E8F0;
+  padding-bottom: 0.5rem;
+}
+
+.educator-tab-btn {
+  background: #F1F5F9;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.educator-tab-btn.active {
+  background: var(--color-purple);
+  color: white;
+}
+
+.json-editor-textarea {
+  width: 100%;
+  height: 280px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  padding: 1rem;
+  border: 2px solid #CBD5E1;
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  background: #0F172A;
+  color: #38BDF8;
+}
+
+.gemini-prompt-box {
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.copy-prompt-btn {
+  background: var(--color-purple);
+  color: white;
+  border: none;
+  font-family: var(--font-display);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+/* ===================================================================
+   RESPONSIVIDADE
+   =================================================================== */
+@media (max-width: 900px) {
+  .study-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .mascot-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .speech-bubble::before {
+    display: none;
+  }
+
+  .calisto-wanderer-canvas {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-container {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  .main-header {
+    border-radius: var(--radius-md);
+  }
+
+  .mascot-hero-content h1 {
+    font-size: 1.6rem;
+  }
+
+  .card-question-text,
+  .card-answer-text {
+    font-size: 1.2rem;
+  }
+}
