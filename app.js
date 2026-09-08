@@ -1744,7 +1744,9 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '', customVideoUrl
   if (!titulo) {
     for (let l of lines) {
       if (l.startsWith('# ')) {
-        titulo = l.replace(/^#\s+/, '').replace(/^(Guia de Estudo|Documento de Briefing|NotebookLM:?)\s*/i, '');
+        titulo = l.replace(/^#\s+/, '')
+                  .replace(/^(?:Guia de Estudo|Documento de Briefing|Briefing Doc|Resumo|NotebookLM)\s*(?:do|de|da|dos|das)?\s*(?:NotebookLM)?:\s*/i, '')
+                  .trim();
         break;
       }
     }
