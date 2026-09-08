@@ -1373,7 +1373,7 @@ function atualizarStatusGeminiKey() {
   if (badge) {
     if (key && key.length > 10) {
       badge.className = 'api-status-badge connected';
-      badge.textContent = '✅ Conectado ao Gemini 2.0 Flash';
+      badge.textContent = '✅ Conectado ao Gemini 2.5 Flash';
     } else {
       badge.className = 'api-status-badge disconnected';
       badge.textContent = '⚪ Chave não informada';
@@ -1452,7 +1452,7 @@ async function processarGeracaoEducador() {
 
     if (apiKey && apiKey.length > 10) {
       if (progBar) progBar.style.width = '50%';
-      if (progStatus) progStatus.innerHTML = '🤖 Chamando a API do Gemini 2.0 Flash para estruturar o estudo infantil...';
+      if (progStatus) progStatus.innerHTML = '🤖 Chamando a API do Gemini 2.5 Flash para estruturar o estudo infantil...';
       
       ws = await gerarComGeminiAPI(apiKey, topicInput, urlInput, manualText);
     } else {
@@ -1503,10 +1503,14 @@ async function processarGeracaoEducador() {
 }
 
 /**
- * Chamada à API Oficial do Google Gemini
+ * Chamada à API Oficial do Google Gemini com Fallback Automático entre Modelos Ativos
  */
 async function gerarComGeminiAPI(apiKey, tema, url, texto) {
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro'
+  ];
 
   const prompt = `Você é o educador assistente do sábio periquito Calisto para uma plataforma infantil de estudos.
 Com base nas seguintes informações de estudo fornecidas:
@@ -1562,35 +1566,60 @@ Gere um módulo educacional completo para crianças em formato JSON EXATO (sem m
   ]
 }`;
 
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' }
-    })
-  });
+  let lastError = null;
 
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `HTTP ${response.status}: Falha ao chamar a API do Gemini.`);
+  // Tenta em sequência cada modelo disponível
+  for (const model of candidateModels) {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        const msg = errData?.error?.message || `HTTP ${response.status}`;
+        lastError = new Error(msg);
+        // Se o modelo estiver indisponível ou 404, tenta o próximo da lista
+        if (response.status === 404 || msg.includes('no longer available') || msg.includes('not found')) {
+          console.warn(`Modelo ${model} indisponível, tentando próximo modelo...`);
+          continue;
+        }
+        throw lastError;
+      }
+
+      const resData = await response.json();
+      const textOutput = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!textOutput) throw new Error('A API do Gemini retornou uma resposta vazia.');
+
+      let cleanJson = textOutput.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(cleanJson);
+
+      parsed.id = 'nlm_' + Date.now();
+      parsed.isNotebookLM = true;
+      parsed.notebookUrl = url || '';
+      if (!parsed.cor) parsed.cor = 'linear-gradient(135deg, #1E40AF, #7C3AED)';
+      if (!parsed.icone) parsed.icone = '🌟';
+      parsed.slides = window.gerarSlidesParaWorkspace(parsed);
+
+      return parsed;
+
+    } catch (err) {
+      lastError = err;
+      if (err.message && (err.message.includes('no longer available') || err.message.includes('404'))) {
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const resData = await response.json();
-  const textOutput = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!textOutput) throw new Error('A API do Gemini retornou uma resposta vazia.');
-
-  let cleanJson = textOutput.trim().replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
-  const parsed = JSON.parse(cleanJson);
-
-  parsed.id = 'nlm_' + Date.now();
-  parsed.isNotebookLM = true;
-  parsed.notebookUrl = url || '';
-  if (!parsed.cor) parsed.cor = 'linear-gradient(135deg, #1E40AF, #7C3AED)';
-  if (!parsed.icone) parsed.icone = '🌟';
-  parsed.slides = window.gerarSlidesParaWorkspace(parsed);
-
-  return parsed;
+  throw lastError || new Error('Não foi possível conectar com os modelos da API do Gemini.');
 }
 
 /**
