@@ -547,46 +547,74 @@
 
         <!-- Formulário de Criação e Importação -->
         <div class="notebooklm-importer-box" style="margin-top: 1rem;">
-          <div class="form-group">
-            <label for="ed-notebooklm-url-input" class="form-label">
-              🔗 URL do Workspace / NotebookLM ou Link de Conteúdo:
-            </label>
-            <div style="display: flex; gap: 0.5rem;">
-              <input type="url" id="ed-notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id ou link de artigo..." style="flex: 1; text-align: left; font-size: 0.95rem;">
-              <button type="button" id="btn-ed-paste-url" class="paste-quick-btn" title="Colar link da área de transferência">📋 Colar</button>
+          
+          <!-- Banner com Orientação Passo a Passo para 100% de Fidelidade -->
+          <div class="ed-info-banner" style="background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 14px; padding: 0.85rem 1rem; margin-bottom: 1.1rem;">
+            <div style="display: flex; align-items: flex-start; gap: 0.6rem;">
+              <span style="font-size: 1.35rem;">💡</span>
+              <div style="font-size: 0.86rem; color: #1E3A8A; line-height: 1.45;">
+                <strong>Como importar seus testes, vídeos, quiz e infográficos do NotebookLM com 100% de fidelidade:</strong>
+                <ol style="margin: 0.35rem 0 0 1.1rem; padding: 0;">
+                  <li>No seu <strong>NotebookLM</strong>, abra seu caderno e vá em <strong>"Guia de Estudo" (Study Guide)</strong> ou <strong>"Notas"</strong>.</li>
+                  <li>Clique no botão <strong>📋 Copiar</strong> (ou selecione todo o texto com quizzes, testes e fontes).</li>
+                  <li>Clique no botão <strong>"📋 Colar do Clipboard"</strong> na caixa de texto abaixo. Se houver vídeo do YouTube, informe o link no campo de vídeo!</li>
+                  <li>Clique em <strong>"🚀 Gerar & Adicionar Workspace"</strong>. O Calisto importará cada quiz, teste, vídeo e infográfico perfeitamente!</li>
+                </ol>
+              </div>
             </div>
           </div>
 
           <div class="form-group">
             <label for="ed-topic-name-input" class="form-label">
-              💡 Assunto ou Título do Módulo (Opcional):
+              💡 Assunto ou Título do Módulo:
             </label>
-            <input type="text" id="ed-topic-name-input" class="cert-name-input" placeholder="Ex: Astronomia, Animais da Amazônia, Robótica..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem;">
+            <input type="text" id="ed-topic-name-input" class="cert-name-input" placeholder="Ex: Robótica e Inteligência Artificial, Recifes de Corais, Astronomia..." style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem;">
+          </div>
+
+          <!-- Campo de Vídeo Dedicado -->
+          <div class="form-group">
+            <label for="ed-video-url-input" class="form-label">
+              🎥 Link do Vídeo (YouTube / Embed / Opcional):
+            </label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="url" id="ed-video-url-input" class="cert-name-input" placeholder="Ex: https://www.youtube.com/watch?v=... ou deixe vazio se estiver nas notas" style="flex: 1; text-align: left; font-size: 0.95rem;">
+              <button type="button" id="btn-ed-paste-video" class="paste-quick-btn" title="Colar link de vídeo">📋 Colar</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="ed-notebooklm-url-input" class="form-label">
+              🔗 URL de Referência / Link do NotebookLM (Opcional):
+            </label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="url" id="ed-notebooklm-url-input" class="cert-name-input" placeholder="https://notebooklm.google.com/notebook/seu-id" style="flex: 1; text-align: left; font-size: 0.95rem;">
+              <button type="button" id="btn-ed-paste-url" class="paste-quick-btn" title="Colar link da área de transferência">📋 Colar</button>
+            </div>
           </div>
 
           <!-- Upload ou Colar Texto do NotebookLM -->
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
-              <label for="ed-manual-content-input" class="form-label" style="margin-bottom: 0;">
-                📝 Guia de Estudo / Briefing do NotebookLM (Texto ou Arquivo):
+              <label for="ed-manual-content-input" class="form-label" style="margin-bottom: 0; font-weight: 800; color: #1E293B;">
+                📝 Conteúdo Completo do NotebookLM (Guia de Estudo, Quiz, Testes e Notas):
               </label>
               <div style="display: flex; gap: 0.4rem;">
-                <button type="button" id="btn-ed-paste-guide" class="paste-quick-btn" title="Colar do Clipboard">📋 Colar do Clipboard</button>
+                <button type="button" id="btn-ed-paste-guide" class="paste-quick-btn" style="background: #2563EB; color: #fff; font-weight: 700;" title="Colar do Clipboard">📋 Colar do Clipboard</button>
                 <label class="file-upload-label" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;">
                   📁 Carregar Arquivo
                   <input type="file" id="ed-notebooklm-file-input" accept=".txt,.md,.json" style="display: none;">
                 </label>
               </div>
             </div>
-            <textarea id="ed-manual-content-input" class="json-editor-textarea" placeholder="Cole o texto copiado do NotebookLM (Study Guide, FAQ, Briefing) ou deixe em branco para gerar direto com a IA..." style="min-height: 120px; font-family: inherit; font-size: 0.9rem;"></textarea>
+            <textarea id="ed-manual-content-input" class="json-editor-textarea" placeholder="Cole aqui o texto copiado do NotebookLM (com perguntas do quiz, testes, etapas do infográfico, tópicos e notas)..." style="min-height: 140px; font-family: inherit; font-size: 0.9rem;"></textarea>
           </div>
 
           <!-- Presets de Teste Rápido -->
           <div class="presets-quick-card">
-            <span style="font-size: 0.84rem; font-weight: 800; color: #475569;">⚡ Modelos Prontos para Testar:</span>
+            <span style="font-size: 0.84rem; font-weight: 800; color: #475569;">⚡ Exemplos Prontos do NotebookLM para Testar:</span>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.35rem;">
-              <button type="button" class="preset-btn" id="btn-ed-preset-robotics">🤖 Robótica & IA</button>
-              <button type="button" class="preset-btn" id="btn-ed-preset-coral">🌊 Recifes de Corais</button>
+              <button type="button" class="preset-btn" id="btn-ed-preset-robotics">🤖 Robótica & IA (com Quiz e Vídeo)</button>
+              <button type="button" class="preset-btn" id="btn-ed-preset-coral">🌊 Recifes de Corais (com Infográfico)</button>
               <button type="button" class="preset-btn" id="btn-ed-preset-astronomy">🌌 Astronomia & Galáxias</button>
             </div>
           </div>

@@ -1384,13 +1384,22 @@ function atualizarStatusGeminiKey() {
 function carregarPresetEducador(index) {
   sounds.playPop();
   const presets = window.NOTEBOOKLM_PRESETS || [];
+  const videoPresets = [
+    'https://www.youtube.com/watch?v=up_wOqKj7c4',
+    'https://www.youtube.com/watch?v=n3_v08lP69Q',
+    'https://www.youtube.com/watch?v=fD3BqA3k1tY'
+  ];
+
   if (presets[index]) {
     const urlInput = document.getElementById('ed-notebooklm-url-input');
     const manualInput = document.getElementById('ed-manual-content-input');
     const topicInput = document.getElementById('ed-topic-name-input');
+    const videoInput = document.getElementById('ed-video-url-input');
+
     if (urlInput) urlInput.value = presets[index].url;
     if (manualInput) manualInput.value = presets[index].rawContent;
     if (topicInput) topicInput.value = presets[index].nome.replace(/^[^\w\s]+/, '').trim();
+    if (videoInput) videoInput.value = videoPresets[index] || '';
   }
 }
 
@@ -1408,14 +1417,28 @@ function carregarArquivoEducador(e) {
 }
 
 /**
+ * Função utilitária para formatar links do YouTube para embed seguro
+ */
+function formatarVideoEmbedUrl(url) {
+  if (!url) return '';
+  const ytMatch = url.match(/(?:youtube\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
+  }
+  return url;
+}
+
+/**
  * Busca de conteúdo via endpoint local ou fallback
  */
 async function buscarConteudoDaUrl(url) {
   try {
-    const response = await fetch(`/api/fetch-notebooklm?url=${encodeURIComponent(url)}`);
+    const response = await fetch(`/api/fetch-workspace?url=${encodeURIComponent(url)}`);
     if (response.ok) {
       const data = await response.json();
-      return data;
+      if (data && data.body) {
+        return { title: '', content: data.body };
+      }
     }
   } catch (err) {
     console.warn('Busca remota não disponível, processando localmente:', err);
@@ -1428,13 +1451,32 @@ async function buscarConteudoDaUrl(url) {
  */
 async function processarGeracaoEducador() {
   const urlInput = (document.getElementById('ed-notebooklm-url-input')?.value || '').trim();
+  let videoUrlInput = (document.getElementById('ed-video-url-input')?.value || '').trim();
   const topicInput = (document.getElementById('ed-topic-name-input')?.value || '').trim();
-  const manualText = (document.getElementById('ed-manual-content-input')?.value || '').trim();
+  let manualText = (document.getElementById('ed-manual-content-input')?.value || '').trim();
   const apiKey = getGeminiApiKey();
 
-  if (!urlInput && !topicInput && !manualText) {
+  // Se o usuário colocou o link do YouTube no campo de URL
+  if (/youtube\.com|youtu\.be/i.test(urlInput) && !videoUrlInput) {
+    videoUrlInput = urlInput;
+  }
+
+  // Alerta claro se o usuário passou apenas o link do NotebookLM sem colar o texto
+  if (!manualText && /notebook(\.google|lm\.google)/i.test(urlInput)) {
     sounds.playWrong();
-    alert('Por favor, informe a URL do NotebookLM, o assunto do estudo ou cole o texto do guia.');
+    alert(
+      '⚠️ O Google NotebookLM é protegido pela sua Conta Google e não permite acesso externo direto apenas pela URL.\n\n' +
+      '👉 Para trazer TODOS os seus vídeos, testes, quizzes e infográficos já criados:\n' +
+      '1. No seu NotebookLM, abra o "Guia de Estudo" ou "Notas" e clique em Copiar.\n' +
+      '2. Clique no botão azul "📋 Colar do Clipboard" no campo de texto.\n' +
+      '3. Clique em "🚀 Gerar & Adicionar Workspace"!'
+    );
+    return;
+  }
+
+  if (!urlInput && !topicInput && !manualText && !videoUrlInput) {
+    sounds.playWrong();
+    alert('Por favor, informe o assunto do estudo, o link de vídeo ou cole o conteúdo do NotebookLM.');
     return;
   }
 
@@ -1444,7 +1486,7 @@ async function processarGeracaoEducador() {
 
   if (progBox) progBox.style.display = 'block';
   if (progBar) progBar.style.width = '20%';
-  if (progStatus) progStatus.innerHTML = '📡 Conectando ao material...';
+  if (progStatus) progStatus.innerHTML = '📡 Conectando ao material de estudo...';
   sounds.playPop();
 
   try {
@@ -1452,14 +1494,14 @@ async function processarGeracaoEducador() {
 
     if (apiKey && apiKey.length > 10) {
       if (progBar) progBar.style.width = '50%';
-      if (progStatus) progStatus.innerHTML = '🤖 Conectando à IA do Google Gemini para estruturar o estudo infantil...';
+      if (progStatus) progStatus.innerHTML = '🤖 Extraindo testes, vídeos, quiz e infográficos com a IA do Google Gemini...';
       
-      ws = await gerarComGeminiAPI(apiKey, topicInput, urlInput, manualText);
+      ws = await gerarComGeminiAPI(apiKey, topicInput, urlInput, manualText, videoUrlInput);
     } else {
       let rawContent = manualText;
       let fetchedTitle = topicInput;
 
-      if (urlInput) {
+      if (urlInput && !/notebook(\.google|lm\.google)/i.test(urlInput)) {
         if (progBar) progBar.style.width = '45%';
         if (progStatus) progStatus.innerHTML = `📥 Baixando materiais em <strong>${urlInput.substring(0, 35)}...</strong>`;
         try {
@@ -1472,14 +1514,14 @@ async function processarGeracaoEducador() {
       }
 
       if (progBar) progBar.style.width = '75%';
-      if (progStatus) progStatus.innerHTML = '🧠 Estruturando infográficos, quiz, flashcards e apresentação...';
+      if (progStatus) progStatus.innerHTML = '🧠 Mapeando infográficos, quiz, testes, flashcards e apresentação...';
       await new Promise(r => setTimeout(r, 400));
 
-      ws = extrairMaterialCompleto(urlInput, rawContent, fetchedTitle || topicInput);
+      ws = extrairMaterialCompleto(urlInput, rawContent, fetchedTitle || topicInput, videoUrlInput);
     }
 
     if (progBar) progBar.style.width = '100%';
-    if (progStatus) progStatus.innerHTML = '✨ Workspace criado com sucesso!';
+    if (progStatus) progStatus.innerHTML = '✨ Workspace e Apresentação criados com 100% do material!';
     await new Promise(r => setTimeout(r, 300));
 
     window.WORKSPACES_DATA.unshift(ws);
@@ -1554,25 +1596,38 @@ async function listarModelosDisponiveis(apiKey) {
 }
 
 /**
- * Chamada à API Oficial do Google Gemini com Auto-Descoberta e Fallback Automático
+ * Chamada à API Oficial do Google Gemini com Auto-Descoberta e Alta Fidelidade
  */
-async function gerarComGeminiAPI(apiKey, tema, url, texto) {
+async function gerarComGeminiAPI(apiKey, tema, url, texto, videoUrlCustom = '') {
   const candidateModels = await listarModelosDisponiveis(apiKey);
 
-  const prompt = `Você é o educador assistente do sábio periquito Calisto para uma plataforma infantil de estudos.
-Com base nas seguintes informações de estudo fornecidas:
-Tema: "${tema || ''}"
-URL / Link: "${url || ''}"
-Material / Notas / Guia do NotebookLM:
-"${(texto || tema || 'Ciência e Descobertas').substring(0, 5000)}"
+  const prompt = `Você é um pedagogo assistente do sábio periquito Calisto para uma plataforma infantil de estudos (crianças de até 10 anos).
+Você recebeu o material abaixo originado do Google NotebookLM / fontes de estudo.
 
-Gere um módulo educacional completo para crianças em formato JSON EXATO (sem markdown extra, apenas o objeto JSON puro):
+INFORMAÇÕES FORNECIDAS:
+Tema / Título: "${tema || ''}"
+URL de Referência: "${url || ''}"
+Link de Vídeo Informado: "${videoUrlCustom || ''}"
+Conteúdo Completo do Material / Notas / Guia / Quizzes / Testes:
+"""
+${(texto || tema || 'Ciência e Descobertas').substring(0, 35000)}
+"""
+
+MISSÃO CRÍTICA DE EXTRAÇÃO E FIDELIDADE:
+1. VÍDEO: Se o 'Link de Vídeo Informado' foi fornecido, use-o no campo "videoUrl". Se não, procure no conteúdo do material por links do YouTube (youtube.com ou youtu.be) e coloque a URL de embed em "videoUrl". Se não houver nenhum, coloque uma URL do YouTube educativa adequada para crianças.
+2. QUIZZES E TESTES REAIS: NÃO invente perguntas genéricas se o material original tiver perguntas de teste, simulado, quiz, fixação ou múltipla escolha. EXTRAIA TODAS as perguntas do material original para a lista "quiz", identificando a pergunta, as 4 opções (A, B, C, D), o índice da resposta correta (0 para A, 1 para B, 2 para C, 3 para D) e uma explicação infantil acolhedora do Calisto.
+3. INFOGRÁFICOS E PASSOS: Se houver esquemas, etapas, linhas do tempo, listas de passos ou dados no material original, transforme-os fielmente no array "infograficos" com etapas numeradas, ícones temáticos e a estatística ou dado de destaque em "estatisticaDestaque".
+4. FLASHCARDS E GLOSSÁRIO: Extraia todos os conceitos-chave, perguntas rápidas e termos do glossário presentes no material original para o array "flashcards".
+5. CURIOSIDADES: Extraia os fatos mais fascinantes, "Você sabia?" e descobertas presentes no material original para o array "curiosidades".
+6. TÓPICOS E RESUMO: Resuma os principais aprendizados com clareza, entusiasmo e linguagem infantil.
+
+Retorne EXCLUSIVAMENTE o JSON estruturado puro no formato exato abaixo (sem markdown extra, apenas o objeto JSON):
 {
-  "titulo": "Título cativante para crianças",
+  "titulo": "Título Cativante",
   "icone": "Ícone emoji temático (ex: 🚀, 🌊, 🤖, 🦖)",
   "subtitulo": "Subtítulo empolgante",
   "cor": "linear-gradient(135deg, #1E40AF, #7C3AED)",
-  "videoUrl": "URL do embed do youtube ou deixe vazio",
+  "videoUrl": "https://www.youtube-nocookie.com/embed/...",
   "resumo": "Explicação em 2 frases simples com linguagem infantil acolhedora.",
   "topicos": [
     "Ponto 1 claro e interessante",
@@ -1600,8 +1655,7 @@ Gere um módulo educacional completo para crianças em formato JSON EXATO (sem m
     "Curiosidade 2 que pouca gente sabe"
   ],
   "flashcards": [
-    { "pergunta": "Pergunta intrigante para a criança?", "resposta": "Resposta mágica e clara!" },
-    { "pergunta": "Pergunta curiosa sobre o tema?", "resposta": "Explicação divertida do Calisto!" }
+    { "pergunta": "Pergunta intrigante para a criança?", "resposta": "Resposta mágica e clara!" }
   ],
   "quiz": [
     {
@@ -1649,6 +1703,14 @@ Gere um módulo educacional completo para crianças em formato JSON EXATO (sem m
       parsed.id = 'nlm_' + Date.now();
       parsed.isNotebookLM = true;
       parsed.notebookUrl = url || '';
+      
+      // Garante formatação correta do vídeo
+      if (videoUrlCustom) {
+        parsed.videoUrl = formatarVideoEmbedUrl(videoUrlCustom);
+      } else if (parsed.videoUrl) {
+        parsed.videoUrl = formatarVideoEmbedUrl(parsed.videoUrl);
+      }
+
       if (!parsed.cor) parsed.cor = 'linear-gradient(135deg, #1E40AF, #7C3AED)';
       if (!parsed.icone) parsed.icone = '🌟';
       parsed.slides = window.gerarSlidesParaWorkspace(parsed);
@@ -1666,13 +1728,13 @@ Gere um módulo educacional completo para crianças em formato JSON EXATO (sem m
 }
 
 /**
- * Extrator Profundo: Mapeia o material em um workspace completo do Calisto
+ * Extrator Profundo: Mapeia todo o material em um workspace completo do Calisto
  */
-function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
+function extrairMaterialCompleto(url, rawText, fetchedTitle = '', customVideoUrl = '') {
   let text = rawText || '';
 
   if (!text && url) {
-    const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => url.toLowerCase().includes(p.url.toLowerCase()) || url.includes('robotica') || url.includes('coral'));
+    const preset = (window.NOTEBOOKLM_PRESETS || []).find(p => url.toLowerCase().includes(p.url.toLowerCase()) || url.includes('robotica') || url.includes('coral') || url.includes('astronomia'));
     if (preset) text = preset.rawContent;
   }
 
@@ -1710,7 +1772,7 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
   for (let l of lines) {
     if (l.startsWith('- ') || l.startsWith('* ') || /^\d+\.\s/.test(l)) {
       const clean = l.replace(/^[-*]\s+|\d+\.\s+/, '');
-      if (clean.length > 15 && !clean.includes('Correta:') && !clean.startsWith('A)') && !clean.startsWith('B)')) {
+      if (clean.length > 15 && !clean.includes('Correta:') && !clean.startsWith('A)') && !clean.startsWith('B)') && !clean.startsWith('C)') && !clean.startsWith('D)')) {
         topicos.push(clean);
       }
     }
@@ -1723,55 +1785,31 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     ];
   }
 
+  // Extração de Vídeo
   let videoUrl = '';
-  const ytMatch = text.match(/(?:youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch && ytMatch[1]) {
-    videoUrl = `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
+  if (customVideoUrl) {
+    videoUrl = formatarVideoEmbedUrl(customVideoUrl);
   } else {
-    const lowerTitle = (titulo + ' ' + text).toLowerCase();
-    if (lowerTitle.includes('robô') || lowerTitle.includes('robótica') || lowerTitle.includes('ia') || lowerTitle.includes('inteligência')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
-    } else if (lowerTitle.includes('coral') || lowerTitle.includes('oceano') || lowerTitle.includes('mar') || lowerTitle.includes('peixe')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/n3_v08lP69Q';
-    } else if (lowerTitle.includes('espaço') || lowerTitle.includes('sistema solar') || lowerTitle.includes('planeta') || lowerTitle.includes('estrela')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/fD3BqA3k1tY';
-    } else if (lowerTitle.includes('dinossauro') || lowerTitle.includes('fóssil') || lowerTitle.includes('t-rex')) {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/9w_Yh8jW3n8';
+    const ytMatch = text.match(/(?:youtube\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      videoUrl = `https://www.youtube-nocookie.com/embed/${ytMatch[1]}`;
     } else {
-      videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
-    }
-  }
-
-  const infograficos = [
-    {
-      titulo: `Mapa Visual: ${titulo}`,
-      subtitulo: 'Esquema em etapas para aprender de forma prática',
-      itens: topicos.slice(0, 3).map((t, i) => ({
-        numero: (i + 1).toString(),
-        icone: ['🔍', '💡', '🚀', '🌟'][i] || '📌',
-        titulo: `Etapa ${i + 1}`,
-        descricao: t
-      })),
-      estatisticaDestaque: {
-        valor: '100%',
-        rotulo: `dos conceitos de ${titulo} sintetizados para estudo infantil!`
+      const lowerTitle = (titulo + ' ' + text).toLowerCase();
+      if (lowerTitle.includes('robô') || lowerTitle.includes('robótica') || lowerTitle.includes('ia') || lowerTitle.includes('inteligência')) {
+        videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
+      } else if (lowerTitle.includes('coral') || lowerTitle.includes('oceano') || lowerTitle.includes('mar') || lowerTitle.includes('peixe')) {
+        videoUrl = 'https://www.youtube-nocookie.com/embed/n3_v08lP69Q';
+      } else if (lowerTitle.includes('espaço') || lowerTitle.includes('sistema solar') || lowerTitle.includes('planeta') || lowerTitle.includes('estrela') || lowerTitle.includes('astronomia')) {
+        videoUrl = 'https://www.youtube-nocookie.com/embed/fD3BqA3k1tY';
+      } else if (lowerTitle.includes('dinossauro') || lowerTitle.includes('fóssil') || lowerTitle.includes('t-rex')) {
+        videoUrl = 'https://www.youtube-nocookie.com/embed/9w_Yh8jW3n8';
+      } else {
+        videoUrl = 'https://www.youtube-nocookie.com/embed/up_wOqKj7c4';
       }
     }
-  ];
-
-  let curiosidades = [];
-  for (let l of lines) {
-    if (/curiosidade|você sabia|sabia que|fato|segredo/i.test(l)) {
-      curiosidades.push(l.replace(/^[-*#]\s*/, ''));
-    }
-  }
-  if (curiosidades.length === 0) {
-    curiosidades = [
-      `Sabia que o estudo de ${titulo} ajuda cientistas a desenvolverem grandes inovações para o mundo? 🌟`,
-      `O Calisto adora este tema porque ele conecta natureza, tecnologia e raciocínio lógico! 🦜`
-    ];
   }
 
+  // Extração de Flashcards
   let flashcards = [];
   for (let l of lines) {
     if (l.includes('|')) {
@@ -1780,6 +1818,14 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
         flashcards.push({
           pergunta: parts[0].replace(/^[-*#]\s*/, '').trim(),
           resposta: parts[1].trim()
+        });
+      }
+    } else if (l.includes('?') && l.includes(':')) {
+      const parts = l.split(':');
+      if (parts.length >= 2 && parts[0].length > 5) {
+        flashcards.push({
+          pergunta: parts[0].replace(/^[-*#]\s*/, '').trim(),
+          resposta: parts.slice(1).join(':').trim()
         });
       }
     }
@@ -1797,26 +1843,63 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
     ];
   }
 
+  // Extração de Curiosidades
+  let curiosidades = [];
+  for (let l of lines) {
+    if (/curiosidade|você sabia|sabia que|fato|segredo/i.test(l)) {
+      curiosidades.push(l.replace(/^[-*#]\s*/, ''));
+    }
+  }
+  if (curiosidades.length === 0) {
+    curiosidades = [
+      `Sabia que o estudo de ${titulo} ajuda cientistas a desenvolverem grandes inovações para o mundo? 🌟`,
+      `O Calisto adora este tema porque ele conecta natureza, tecnologia e raciocínio lógico! 🦜`
+    ];
+  }
+
+  // Extração Completa de Quiz e Testes
   let quiz = [];
   let currentQ = null;
-  for (let l of lines) {
-    if (/^\d+\.\s/.test(l) && l.includes('?')) {
-      if (currentQ && currentQ.opcoes.length >= 2) quiz.push(currentQ);
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+
+    // Detecta início de pergunta
+    if (/^(?:\d+[\.\-\)]|Quest[aã]o\s*\d+|Pergunta\s*\d+|Quiz\s*\d+)/i.test(l) && (l.includes('?') || l.length > 15)) {
+      if (currentQ && currentQ.opcoes.length >= 2) {
+        quiz.push(currentQ);
+      }
       currentQ = {
-        pergunta: l.replace(/^\d+\.\s+/, ''),
+        pergunta: l.replace(/^(?:\d+[\.\-\)]|Quest[aã]o\s*\d+:?|Pergunta\s*\d+:?|Quiz\s*\d+:?)\s*/i, '').trim(),
         opcoes: [],
         respostaCorreta: 0,
         explicacao: 'Excelente raciocínio! Resposta certíssima!'
       };
-    } else if (currentQ && /^[A-D]\)/i.test(l)) {
-      currentQ.opcoes.push(l.replace(/^[A-D]\)\s*/i, ''));
-    } else if (currentQ && /^Correta:\s*([A-D])/i.test(l)) {
-      const letter = l.match(/^Correta:\s*([A-D])/i)[1].toUpperCase();
-      const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-      currentQ.respostaCorreta = map[letter] !== undefined ? map[letter] : 0;
+    } 
+    // Detecta alternativas A), B), C), D) ou A., B., C., D.
+    else if (currentQ && /^[A-D][\)\.\-]\s*/i.test(l)) {
+      currentQ.opcoes.push(l.replace(/^[A-D][\)\.\-]\s*/i, '').trim());
+    } 
+    // Detecta marcação de resposta correta
+    else if (currentQ && /(?:Correta|Resposta|Gabarito|Resposta\s+Certa):\s*([A-D])/i.test(l)) {
+      const match = l.match(/(?:Correta|Resposta|Gabarito|Resposta\s+Certa):\s*([A-D])/i);
+      if (match && match[1]) {
+        const letter = match[1].toUpperCase();
+        const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+        currentQ.respostaCorreta = map[letter] !== undefined ? map[letter] : 0;
+      }
+    } 
+    // Detecta explicação da resposta
+    else if (currentQ && /(?:Explica[cç][aã]o|Motivo|Por que):\s*(.+)/i.test(l)) {
+      const match = l.match(/(?:Explica[cç][aã]o|Motivo|Por que):\s*(.+)/i);
+      if (match && match[1]) {
+        currentQ.explicacao = match[1].trim();
+      }
     }
   }
-  if (currentQ && currentQ.opcoes.length >= 2) quiz.push(currentQ);
+  if (currentQ && currentQ.opcoes.length >= 2) {
+    quiz.push(currentQ);
+  }
 
   if (quiz.length === 0) {
     quiz = [
@@ -1833,6 +1916,24 @@ function extrairMaterialCompleto(url, rawText, fetchedTitle = '') {
       }
     ];
   }
+
+  // Extração de Infográficos
+  const infograficos = [
+    {
+      titulo: `Mapa Visual: ${titulo}`,
+      subtitulo: 'Esquema em etapas para aprender de forma prática',
+      itens: topicos.slice(0, 3).map((t, i) => ({
+        numero: (i + 1).toString(),
+        icone: ['🔍', '💡', '🚀', '🌟'][i] || '📌',
+        titulo: `Etapa ${i + 1}`,
+        descricao: t
+      })),
+      estatisticaDestaque: {
+        valor: '100%',
+        rotulo: `dos conceitos de ${titulo} sintetizados para estudo infantil!`
+      }
+    }
+  ];
 
   const novoWorkspace = {
     id: 'nlm_' + Date.now(),
@@ -2028,6 +2129,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const text = await navigator.clipboard.readText();
       if (text) document.getElementById('ed-notebooklm-url-input').value = text.trim();
+    } catch (e) {}
+  });
+
+  safeBind('btn-ed-paste-video', 'click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) document.getElementById('ed-video-url-input').value = text.trim();
     } catch (e) {}
   });
 
