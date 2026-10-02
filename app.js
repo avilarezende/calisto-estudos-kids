@@ -24,6 +24,22 @@ const AppState = {
 window.AppState = AppState;
 
 // ====================================================================
+// ESCAPE DE HTML — prevenção de XSS
+// Todo dado que venha do educador, da API Gemini, de upload/paste ou
+// de URL buscada DEVE passar por escapeHtml() antes de entrar em
+// innerHTML. Nunca interpolar dados de usuário em innerHTML cru.
+// ====================================================================
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
+// ====================================================================
 // SINTETIZADOR E GERENCIADOR DE ÁUDIO / GRASNIDO DO RINGNECK
 // ====================================================================
 class SoundFX {
@@ -466,13 +482,13 @@ function renderizarGridWorkspaces() {
     card.setAttribute('aria-label', `Mundo ${ws.titulo}`);
 
     card.innerHTML = `
-      <div class="card-header-bar" style="background: ${ws.cor || 'linear-gradient(135deg, #10B981, #059669)'}">
-        <div class="card-icon-circle">${ws.icone || '📖'}</div>
+      <div class="card-header-bar" style="background: ${escapeHtml(ws.cor) || 'linear-gradient(135deg, #10B981, #059669)'}">
+        <div class="card-icon-circle">${escapeHtml(ws.icone) || '📖'}</div>
         <span class="card-badge">Mundo #${index + 1}</span>
       </div>
       <div class="card-body">
-        <h3 class="card-title">${ws.titulo}</h3>
-        <p class="card-desc">${ws.subtitulo || ws.resumo}</p>
+        <h3 class="card-title">${escapeHtml(ws.titulo)}</h3>
+        <p class="card-desc">${escapeHtml(ws.subtitulo || ws.resumo)}</p>
         <div class="card-footer-meta">
           <span class="card-status ${isCompleted ? 'completed' : ''}">
             ${isCompleted ? '⭐ Concluído!' : '🌱 Novo Mundo'}
@@ -699,11 +715,11 @@ function renderizarInfograficoNoSlide(info, container) {
     card.className = 'infographic-card';
     card.innerHTML = `
       <div class="infographic-card-header">
-        <span class="infographic-step-badge">${it.numero || '★'}</span>
-        <span class="infographic-card-icon">${it.icone || '📌'}</span>
-        <span class="infographic-card-title">${it.titulo}</span>
+        <span class="infographic-step-badge">${escapeHtml(it.numero) || '★'}</span>
+        <span class="infographic-card-icon">${escapeHtml(it.icone) || '📌'}</span>
+        <span class="infographic-card-title">${escapeHtml(it.titulo)}</span>
       </div>
-      <p class="infographic-card-desc">${it.descricao}</p>
+      <p class="infographic-card-desc">${escapeHtml(it.descricao)}</p>
     `;
     grid.appendChild(card);
   });
@@ -712,8 +728,8 @@ function renderizarInfograficoNoSlide(info, container) {
     const statCard = document.createElement('div');
     statCard.className = 'infographic-stat-card';
     statCard.innerHTML = `
-      <div class="infographic-stat-val">${info.estatisticaDestaque.valor}</div>
-      <div class="infographic-stat-label">${info.estatisticaDestaque.rotulo}</div>
+      <div class="infographic-stat-val">${escapeHtml(info.estatisticaDestaque.valor)}</div>
+      <div class="infographic-stat-label">${escapeHtml(info.estatisticaDestaque.rotulo)}</div>
     `;
     grid.appendChild(statCard);
   }
@@ -922,11 +938,11 @@ function renderizarInfograficosDaSala() {
       card.className = 'infographic-card';
       card.innerHTML = `
         <div class="infographic-card-header">
-          <span class="infographic-step-badge">${it.numero || '★'}</span>
-          <span class="infographic-card-icon">${it.icone || '📌'}</span>
-          <span class="infographic-card-title">${it.titulo}</span>
+          <span class="infographic-step-badge">${escapeHtml(it.numero) || '★'}</span>
+          <span class="infographic-card-icon">${escapeHtml(it.icone) || '📌'}</span>
+          <span class="infographic-card-title">${escapeHtml(it.titulo)}</span>
         </div>
-        <p class="infographic-card-desc">${it.descricao}</p>
+        <p class="infographic-card-desc">${escapeHtml(it.descricao)}</p>
       `;
       container.appendChild(card);
     });
@@ -935,8 +951,8 @@ function renderizarInfograficosDaSala() {
       const statCard = document.createElement('div');
       statCard.className = 'infographic-stat-card';
       statCard.innerHTML = `
-        <div class="infographic-stat-val">${info.estatisticaDestaque.valor}</div>
-        <div class="infographic-stat-label">${info.estatisticaDestaque.rotulo}</div>
+        <div class="infographic-stat-val">${escapeHtml(info.estatisticaDestaque.valor)}</div>
+        <div class="infographic-stat-label">${escapeHtml(info.estatisticaDestaque.rotulo)}</div>
       `;
       container.appendChild(statCard);
     }
@@ -950,7 +966,7 @@ function renderizarInfograficosDaSala() {
           <span class="infographic-card-icon">🌟</span>
           <span class="infographic-card-title">Ponto Chave #${i + 1}</span>
         </div>
-        <p class="infographic-card-desc">${t}</p>
+        <p class="infographic-card-desc">${escapeHtml(t)}</p>
       `;
       container.appendChild(card);
     });
@@ -1080,8 +1096,8 @@ function carregarQuizAtual() {
       const btn = document.createElement('button');
       btn.className = 'quiz-option-btn';
       btn.innerHTML = `
-        <span class="quiz-option-letter">${letters[idx] || (idx + 1)}</span>
-        <span>${opcao}</span>
+        <span class="quiz-option-letter">${escapeHtml(letters[idx] || (idx + 1))}</span>
+        <span>${escapeHtml(opcao)}</span>
       `;
       btn.addEventListener('click', () => verificarRespostaQuiz(idx, btn));
       optsContainer.appendChild(btn);
@@ -1111,7 +1127,7 @@ function verificarRespostaQuiz(selectedIdx, btnElement) {
 
     btnElement.classList.add('correct');
     if (fbBox) fbBox.className = 'quiz-feedback-box show correct-fb';
-    if (fbMsg) fbMsg.innerHTML = `🎉 Resposta Certa! O Calisto adorou, ${nome}! ⭐`;
+    if (fbMsg) fbMsg.innerHTML = `🎉 Resposta Certa! O Calisto adorou, ${escapeHtml(nome)}! ⭐`;
     if (fbExp) fbExp.textContent = q.explicacao || 'Muito bem pensado!';
     if (pacoSpeech) pacoSpeech.textContent = `Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || 'Você é um gênio!'}`;
     falarTexto(`Hehehe! Ora vejam só, ${nome}! Resposta certíssima! ${q.explicacao || ''}`);
@@ -1286,9 +1302,9 @@ function renderizarListaWorkspacesEducador() {
 
     row.innerHTML = `
       <div class="educator-ws-left">
-        <span class="educator-ws-icon">${ws.icone || '📖'}</span>
+        <span class="educator-ws-icon">${escapeHtml(ws.icone) || '📖'}</span>
         <div class="educator-ws-info">
-          <h4 class="educator-ws-title">${ws.titulo}</h4>
+          <h4 class="educator-ws-title">${escapeHtml(ws.titulo)}</h4>
           <div class="educator-ws-meta">
             <span class="ed-ws-badge ${isNlm ? 'nlm' : 'default'}">${isNlm ? '🏷️ NotebookLM / IA' : '🌱 Padrão'}</span>
             <span class="ed-ws-badge stats">${ws.topicos ? ws.topicos.length : 0} Tópicos</span>
@@ -1503,7 +1519,7 @@ async function processarGeracaoEducador() {
 
       if (urlInput && !/notebook(\.google|lm\.google)/i.test(urlInput)) {
         if (progBar) progBar.style.width = '45%';
-        if (progStatus) progStatus.innerHTML = `📥 Baixando materiais em <strong>${urlInput.substring(0, 35)}...</strong>`;
+        if (progStatus) progStatus.innerHTML = `📥 Baixando materiais em <strong>${escapeHtml(urlInput.substring(0, 35))}...</strong>`;
         try {
           const fetchedData = await buscarConteudoDaUrl(urlInput);
           if (fetchedData && fetchedData.content) {
