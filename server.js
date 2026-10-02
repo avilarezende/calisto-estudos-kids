@@ -35,6 +35,31 @@ const BLOCKED_IP_RANGES = [
 
 const MAX_RESPONSE_BYTES = 1024 * 1024; // 1 MB por workspace buscado
 
+// ----- Rate limiting simples (em memória) -----
+// Limita o número de requisições por IP/janela para o endpoint de fetch,
+// reduzindo abuso (proxy SSRF) e consumo de recursos.
+const RATE_LIMIT_WINDOW_MS = 60_000;      // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 60;       // 60 req/min por IP
+
+const rateBuckets = new Map(); // ip -> { count, resetAt }
+
+function rateLimited(ip) {
+  const now = Date.now();
+  let bucket = rateBuckets.get(ip);
+  if (!bucket || bucket.resetAt <= now) {
+    bucket = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS };
+    rateBuckets.set(ip, bucket);
+  }
+  bucket.count += 1;
+  // Limpeza oportunística para evitar crescimento ilimitado do Map
+  if (rateBuckets.size > 10_000) {
+    for (const [key, b] of rateBuckets) {
+      if (b.resetAt <= now) rateBuckets.delete(key);
+    }
+  }
+  return bucket.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
 function isBlockedIp(ip) {
   return BLOCKED_IP_RANGES.some(prefix => ip.startsWith(prefix));
 }
@@ -231,6 +256,13 @@ const server = http.createServer(async (req, res) => {
   if (reqUrl === '/api/fetch-workspace') {
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const targetUrl = urlObj.searchParams.get('url');
+
+    // Rate limit por IP antes de processar (mitiga abuso/DoS).
+    const clientIp = (req.socket.remoteAddress || 'unknown').replace(/^::ffff:/, '');
+    if (rateLimited(clientIp)) {
+      res.writeHead(429, { 'Content-Type': 'application/json; charset=UTF-8', 'Retry-After': '60' });
+      return res.end(JSON.stringify({ success: false, error: 'Muitas requisições. Tente novamente em instantes.' }));
+    }
 
     // CORS restrito ao app local (remove o "*" que criava um proxy aberto).
     res.removeHeader('Access-Control-Allow-Origin');
