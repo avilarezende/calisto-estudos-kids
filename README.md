@@ -156,3 +156,9 @@ Abra o arquivo `data/workspaces.js` no repositório e altere títulos, IDs de v�
 - `data/workspaces.js`: Banco de dados dos 10 workspaces com vídeos, cartões e quizzes.
 - `.github/workflows/ci.yml`: CI com Gitleaks (secret scanning) + `node --check` (sintaxe).
 - `assets/`: Áudios reais de Ringneck e fotos do mascote.
+
+## Ambiente na nuvem
+
+Instalação, locks, diagnóstico e separação desenvolvimento/produção estão documentados em
+[`antigravity-config/cloud/README.md`](../antigravity-config/cloud/README.md) no workspace com os sete checkouts.
+No GitHub: [guia do ambiente](https://github.com/avilarezende/antigravity-config/blob/main/cloud/README.md).
